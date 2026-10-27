@@ -1,0 +1,1857 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}.title,.intro{top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>Exit Strategy</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;600&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Caveat:wght@500&display=swap">
+<style>
+/* Layout: one screen, never a page scroll. Planning: status strip, one panel of compact control rows, actions at the bottom. The desk is its own screen with the document in the middle. Sizes are in rem and the root size follows the viewport, so everything shrinks to fit shorter phones. Single dark look by choice; documents and the Ledger are newsprint. */
+:root{
+  --bg:#0f1512; --panel:#17201b; --panel2:#1e2a23; --line:#2b3a31; --fg:#e8efe9; --muted:#8fa497;
+  --money:#5fd48a; --gold:#e9c46a; --danger:#ff6b5b; --warn:#f4a259; --chipon:#2c2a1a;
+  --paper:#efe9da; --ink:#1d1b17; --inkmuted:#5d574b; --rule:#1d1b17;
+  --idbg:#d9e4ec; --idline:#9fb3c2; --idhead:#4a6274; --note:#fff8c9;
+  --cold:#0b1018; --sky:#141c22; --narr:#d8cfa8; --stamp:#e2483a;
+  --display:"Archivo Black", Impact, "Arial Black", sans-serif;
+  --body:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --news:"Old Standard TT", Georgia, "Times New Roman", serif;
+  --script:"Caveat", "Segoe Script", "Brush Script MT", cursive;
+  color-scheme:dark;
+}
+html{font-size:clamp(10.5px,min(1.9vh,3.9vw),15px)}
+@supports (height:1dvh){html{font-size:clamp(10.5px,min(1.9dvh,3.9vw),15px)}}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:1rem;line-height:1.35;overflow:hidden;-webkit-tap-highlight-color:transparent}
+.screen{box-sizing:border-box;height:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:.55rem;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:.6rem;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{opacity:.35;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.warn{color:var(--warn)} .bad{color:var(--danger)} .good{color:var(--money)}
+
+/* Planning screen */
+.bar{display:flex;align-items:center;gap:.5rem}
+.brand{font-family:var(--display);font-size:1.1rem;letter-spacing:.5px;white-space:nowrap}
+.brand small{font-family:var(--mono);font-size:.65rem;color:var(--muted);margin-left:.3rem;letter-spacing:0}
+.week{flex:1;text-align:center;font-family:var(--display);font-size:1.1rem;color:var(--gold);white-space:nowrap}
+.chip{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:.4rem .65rem;font-size:.8rem;white-space:nowrap}
+.chip.paper{background:var(--paper);color:var(--ink);border-color:var(--paper);font-family:var(--news);font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.35rem}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:.3rem .45rem;min-width:0}
+.stat .k{font-size:.6rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat .v{font-family:var(--mono);font-size:1rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.v.money{color:var(--money)} .v.gold{color:var(--gold)} .v.neg{color:var(--danger)}
+.trust{display:flex;align-items:center;gap:.5rem;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.trust b{font-size:.78rem;text-transform:none;letter-spacing:0;font-weight:600;min-width:5.2rem;text-align:right}
+.tbar{flex:1;height:.45rem;background:var(--panel2);border-radius:3px;overflow:hidden}
+.tbar i{display:block;height:100%;background:var(--money);transition:width .4s}
+.last{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.45rem .6rem;text-align:left;display:flex;flex-direction:column;gap:.1rem;min-width:0}
+.last .k{font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:flex;justify-content:space-between}
+.last .ln1{font-family:var(--mono);font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.last .ln2{font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.last em{font-style:normal;color:var(--gold)}
+.panel{flex:1;min-height:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0 .7rem;display:flex;flex-direction:column;justify-content:space-around}
+.row{display:grid;grid-template-columns:6.2rem minmax(0,1fr);align-items:center;gap:.6rem;padding:.4rem 0}
+.row+.row{border-top:1px solid var(--line)}
+.lab{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;display:flex;flex-direction:column;gap:.1rem}
+.lab small{font-size:.68rem;text-transform:none;letter-spacing:0;font-weight:400;color:var(--fg);opacity:.8;line-height:1.25}
+.seg{display:flex;gap:.3rem}
+.seg button{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:.5rem .15rem;font-size:.82rem}
+.seg.mono button{font-family:var(--mono)}
+.seg button.on{border-color:var(--gold);background:var(--chipon);color:var(--gold)}
+.step{display:flex;align-items:center;gap:.4rem}
+.step button{width:2.3rem;height:2.3rem;flex:none;background:var(--panel2);border:1px solid var(--line);border-radius:7px;font-size:1.1rem}
+.step span{flex:1;min-width:0;text-align:center;display:flex;flex-direction:column}
+.step b{font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step small{font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.skim{display:flex;align-items:center;gap:.6rem}
+.skim input{flex:1;min-width:0;accent-color:var(--gold)}
+.skim b{font-family:var(--mono);font-size:.85rem;min-width:2.6rem;text-align:right}
+.crew{display:flex;gap:.3rem}
+.slot{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:.5rem .3rem;font-size:.76rem;display:flex;align-items:center;justify-content:center;gap:.3rem}
+.slot span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot.empty{border-style:dashed;color:var(--muted)}
+.dot{width:.5rem;height:.5rem;border-radius:50%;flex:none}
+.planbtn{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:.55rem .7rem;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.forecast{font-size:.76rem;display:flex;justify-content:space-between;gap:.6rem;padding:0 .15rem;min-height:1.1em}
+.forecast b{font-family:var(--mono);font-weight:500}
+.actions{display:flex;gap:.6rem}
+.big{border:none;border-radius:9px;padding:.85rem .5rem;font-family:var(--display);font-size:1rem;letter-spacing:.5px}
+.big.go{flex:2;background:var(--money);color:#0b1a10}
+.big.run{flex:1;background:var(--danger);color:#1d0806}
+.big.alt{background:var(--panel2);color:var(--fg);border:1px solid var(--line)}
+.wide{width:100%}
+
+/* Desk screen */
+.deskhead{display:flex;align-items:center;gap:.7rem}
+.clock{font-family:var(--display);font-size:1.8rem;color:var(--gold);line-height:1}
+.clock.late{color:var(--danger)}
+.deskhead .k{font-size:.68rem;color:var(--muted);margin-top:.15rem}
+.tray{flex:1;font-family:var(--mono);font-size:.76rem;color:var(--muted);text-align:center;line-height:1.3}
+.tools{display:flex;flex-direction:column;gap:.3rem}
+.tools .chip{font-size:.74rem;padding:.3rem .55rem}
+.docwrap{flex:1;min-height:0;overflow:auto;border-radius:3px}
+.doc{background:var(--paper);color:var(--ink);border-radius:3px;padding:.8rem;display:flex;flex-direction:column;gap:.55rem;font-family:var(--news);min-height:100%}
+.doctype{font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:.8rem;border-bottom:2px solid var(--rule);padding-bottom:.25rem;display:flex;justify-content:space-between;gap:.5rem}
+.doctype span{font-weight:400;text-transform:none;letter-spacing:0;font-style:italic;color:var(--inkmuted);text-align:right}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:.2rem .7rem;font-size:.92rem}
+.kv span{color:var(--inkmuted)} .kv b{min-width:0;overflow-wrap:anywhere}
+.quote{margin:0;font-style:italic;font-size:.92rem}
+.idcard{background:var(--idbg);color:var(--ink);border:1px solid var(--idline);border-radius:8px;padding:.45rem .65rem;font-family:var(--mono);font-size:.8rem;display:flex;flex-wrap:wrap;gap:.15rem .9rem}
+.idcard .idh{width:100%;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--idhead)}
+.idcard b{width:100%}
+.found{font-family:var(--body);font-size:.78rem;background:var(--note);color:var(--ink);padding:.35rem .5rem;border-radius:2px}
+.fld{display:flex;flex-direction:column;gap:.25rem}
+.fld>span{font-size:.72rem;color:var(--inkmuted);text-transform:uppercase;letter-spacing:.06em}
+.fopt{font-family:var(--body);font-size:.84rem;text-align:left;background:transparent;color:var(--ink);border:1px solid var(--inkmuted);border-radius:4px;padding:.4rem .6rem}
+.fopt.on{background:var(--ink);color:var(--paper)}
+.deskacts{display:flex;gap:.4rem}
+.mini{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:.55rem .45rem;font-size:.8rem}
+.deskacts .mini{flex:1}
+.deskdec{display:flex;gap:.5rem}
+.deskdec .big{flex:1;font-size:.92rem;padding:.85rem .3rem}
+.daylog{flex:1;min-height:0;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.7rem;display:flex;flex-direction:column;gap:.4rem}
+.mh{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:0;font-weight:600}
+.news{border-left:3px solid var(--warn);padding-left:.5rem;font-size:.82rem}
+
+/* Overlays */
+.modal{position:fixed;inset:0;background:rgba(5,8,6,.82);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));z-index:20}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.1rem;max-width:440px;width:100%;display:flex;flex-direction:column;gap:.7rem;max-height:100%;overflow:auto;font-size:.95rem}
+.card h3{font-family:var(--display);font-size:1.25rem;margin:0;text-wrap:balance}
+.card p{margin:0}
+.card .btns{display:flex;flex-direction:column;gap:.5rem}
+.card .btns .big{width:100%}
+.card .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.hint{font-size:.78rem;color:var(--muted);margin:0}
+.report{display:flex;flex-direction:column;gap:.3rem;font-size:.88rem}
+.report .ln{display:flex;justify-content:space-between;gap:.6rem;font-variant-numeric:tabular-nums}
+.report .ln span:last-child{font-family:var(--mono)}
+.opts{display:flex;flex-direction:column;gap:.4rem}
+.opt{display:flex;justify-content:space-between;gap:.6rem;text-align:left;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:.55rem .7rem}
+.opt .nm{min-width:0}
+.opt .nm small{display:block;color:var(--muted);font-size:.75rem}
+.opt .c{font-family:var(--mono);font-size:.8rem;white-space:nowrap}
+.opt.owned{border-style:dashed;cursor:default}
+.lt{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:.6rem;display:flex;flex-direction:column;gap:.35rem}
+.lt .top{display:flex;justify-content:space-between;gap:.5rem;align-items:baseline}
+.lt .top b{min-width:0}
+.lt .top span{font-size:.75rem;white-space:nowrap}
+.lt small{color:var(--muted);font-size:.75rem}
+.lt .acts{display:flex;gap:.4rem;flex-wrap:wrap}
+.rule{margin:0;font-size:.88rem;padding-left:.6rem;border-left:3px solid var(--gold)}
+.cover{display:grid;gap:.45rem;font-size:.88rem}
+.cover div{display:flex;flex-direction:column}
+.cover span{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.cover b{font-family:var(--mono);font-weight:500;overflow-wrap:anywhere}
+.card.paper{background:var(--paper);color:var(--ink);border-color:var(--paper);border-radius:3px;font-family:var(--news)}
+.mast{font-family:var(--news);font-weight:700;font-size:1.6rem;text-align:center;line-height:1.05;border-bottom:3px double var(--rule);padding-bottom:.35rem;text-wrap:balance}
+.dateline{display:flex;justify-content:space-between;font-size:.72rem;border-bottom:1px solid var(--rule);padding-bottom:.25rem;color:var(--inkmuted);font-style:italic}
+.lead h4{font-size:1.35rem;line-height:1.1;margin:0 0 .2rem;text-wrap:balance}
+.lead p,.story p{margin:0;font-size:.8rem;color:var(--inkmuted)}
+.stories{display:grid;grid-template-columns:1fr 1fr;gap:.55rem .8rem;border-top:1px solid var(--rule);padding-top:.55rem}
+.story{min-width:0}
+.story h5{font-size:.9rem;line-height:1.15;margin:0 0 .1rem;text-wrap:balance}
+.tipnote{font-family:var(--body);font-size:.8rem;background:var(--note);color:var(--ink);padding:.45rem .6rem;transform:rotate(-1deg);box-shadow:0 2px 4px rgba(0,0,0,.25)}
+.card.paper .big{font-family:var(--display)}
+.card.paper .big.alt{background:var(--ink);color:var(--paper);border:none}
+.headline{font-family:var(--news);font-weight:700;font-size:1.2rem;background:var(--paper);color:var(--ink);padding:.6rem .75rem;border-radius:3px;text-wrap:balance}
+.ep{display:flex;flex-direction:column;gap:.2rem}
+.ep p{font-size:.88rem;line-height:1.45}
+.endstats{border-top:1px solid var(--line);padding-top:.6rem;display:grid;grid-template-columns:1fr auto;gap:.25rem .8rem;font-size:.88rem}
+.endstats span:nth-child(even){font-family:var(--mono);text-align:right}
+.big.wide,.wide{width:100%;flex:none}
+#blackout{position:fixed;inset:0;z-index:60;background:#000;opacity:0;pointer-events:none;transition:opacity .2s}
+#blackout.on{opacity:1;pointer-events:auto}
+#blackout.flash{animation:police .9s steps(1) forwards}
+@keyframes police{0%{background:#d0101c}22%{background:#000}44%{background:#1238d0}66%{background:#000}100%{background:#000}}
+button.brand{background:none;border:none;padding:0;text-align:left;font-family:var(--display);font-size:1.1rem;letter-spacing:.5px;cursor:pointer}
+.perks{display:flex;flex-direction:column;gap:.25rem;text-align:left;font-size:.86rem}
+.perks p{margin:0}
+.pen{flex:1;min-height:0;border-radius:10px;overflow:hidden;background:#151d18}
+.pen svg{display:block;width:100%;height:100%}
+.fx{margin:0;font-size:.85rem;font-weight:600}
+.pp-dial{animation:rush .45s ease-in-out infinite alternate}
+@keyframes rush{from{transform:translateX(-3px) rotate(-2deg)}to{transform:translateX(3px) rotate(2deg)}}
+.ringl{animation:blinkr .35s steps(2) infinite}
+@keyframes blinkr{50%{opacity:0}}
+.pp-late .sq{animation:wig .5s ease-in-out infinite alternate}
+@keyframes wig{from{transform:translateY(0)}to{transform:translateY(-2px)}}
+.pp-late{animation:slump 3s ease-in-out infinite}
+@keyframes slump{50%{transform:translateY(2px)}}
+.pp-riled{animation:jump .42s ease-in-out infinite alternate}
+@keyframes jump{to{transform:translateY(-7px)}}
+.flashlite{animation:flashl 1.3s steps(1) infinite}
+@keyframes flashl{0%{opacity:0}10%{opacity:.12}20%{opacity:0}60%{opacity:.08}70%{opacity:0}}
+
+/* Feel: the rush and the dread */
+body{background:var(--bg);background:color-mix(in srgb,var(--bg),var(--cold) calc(var(--chill,0)*80%))}
+.screen>:not(.street){filter:saturate(calc(1 - var(--chill,0)*.55))}
+.street{position:relative;z-index:18;box-shadow:0 0 0 1px #2b3a31,0 0 1.2rem rgba(233,196,106,.08)}
+.cruise{animation:cruise 10s linear infinite}
+@keyframes cruise{from{transform:translateX(-90px)}to{transform:translateX(400px)}}
+.ping{animation:ping 1.2s ease-out 3;opacity:0}
+@keyframes ping{0%{opacity:1;transform:scale(.4)}100%{opacity:0;transform:scale(1.4)}}
+.ping{transform-box:fill-box;transform-origin:center}
+.blink{animation:blinkr .8s steps(2) infinite}
+.whale{font-style:normal!important;background:var(--gold);color:#2a2005!important;padding:0 .45rem;border-radius:3px;letter-spacing:.12em;font-weight:700}
+.whaledoc{box-shadow:inset 0 0 0 3px var(--gold)}
+.whalenote{color:var(--gold)}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:15;box-shadow:inset 0 0 calc(var(--dark,0)*16rem) calc(var(--dark,0)*6rem) rgba(0,0,0,calc(var(--dark,0)*.95))}
+body.dread::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:16;box-shadow:inset 0 0 7rem 1.2rem rgba(170,20,20,.4);animation:dreadpulse 1.05s ease-in-out infinite}
+@keyframes dreadpulse{0%,100%{opacity:.25}12%{opacity:1}30%{opacity:.4}42%{opacity:.85}}
+.brand{display:flex;flex-direction:column;line-height:1.1;color:var(--gold)}
+.brand small{margin:0;font-family:var(--body);font-size:.62rem;color:var(--muted)}
+.week{color:var(--fg)}
+button.stat{font:inherit;color:inherit;text-align:left}
+.stat .k em{font-style:normal;color:var(--gold)}
+.street{height:4.2rem;flex:none;border-radius:7px;overflow:hidden;background:var(--sky)}
+.cig{animation:cig 2.6s ease-in-out infinite}
+@keyframes cig{0%,100%{opacity:.25}45%{opacity:1}}
+.rain{animation:rain .5s linear infinite}
+@keyframes rain{to{transform:translate(-4px,9px)}}
+.sig{font-family:var(--script);font-weight:400;font-size:1.15em;letter-spacing:.02em}
+.speech button small{display:block;font-family:var(--body);font-style:normal;font-size:.72rem;color:var(--muted);margin-top:.1rem}
+.street svg{display:block;width:100%;height:100%}
+.narr{margin:0;font-family:var(--news);font-style:italic;font-size:.84rem;color:var(--narr);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:40;overflow:hidden}
+.coin{position:absolute;left:50%;top:45%;width:.9rem;height:.9rem;margin:-.45rem;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3b0,var(--gold) 55%,#a8801f);animation:coin 1s cubic-bezier(.2,.7,.4,1) forwards}
+@keyframes coin{0%{transform:translate(0,0) scale(.4);opacity:1}55%{transform:translate(var(--dx),var(--dy)) scale(1);opacity:1}100%{transform:translate(calc(var(--dx)*1.15),calc(var(--dy) + 9rem)) scale(.9);opacity:0}}
+.stamp{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) rotate(-8deg);border:.3rem solid var(--stamp);color:var(--stamp);border-radius:.5rem;padding:.3rem 1rem;text-align:center;font-family:var(--display);background:rgba(239,233,218,.08);animation:stampin 1.4s ease-out forwards}
+.stamp b{display:block;font-size:2.6rem;letter-spacing:.15em;line-height:1}
+.stamp span{display:block;font-size:1.3rem;color:var(--money);letter-spacing:.05em}
+.stamp.no{border-color:var(--muted);color:var(--muted)}
+@keyframes stampin{0%{transform:translate(-50%,-50%) rotate(-16deg) scale(2.6);opacity:0}16%{transform:translate(-50%,-50%) rotate(-8deg) scale(1);opacity:1}78%{opacity:1}100%{transform:translate(-50%,-50%) rotate(-8deg) scale(1);opacity:0}}
+.shake{animation:shake .35s}
+@keyframes shake{20%{transform:translate(-5px,2px)}40%{transform:translate(5px,-2px)}60%{transform:translate(-3px,1px)}80%{transform:translate(3px,0)}}
+.takebox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.7rem;display:flex;flex-direction:column;gap:.2rem;align-items:center;text-align:center}
+.take{font-family:var(--display);font-size:2.6rem;color:var(--money);line-height:1.05;font-variant-numeric:tabular-nums}
+.speech{display:flex;flex-direction:column;gap:.35rem}
+.speech button{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:.5rem .7rem;font-family:var(--news);font-style:italic;font-size:.88rem;text-align:left}
+.card.gold{background:linear-gradient(165deg,#3b3012,var(--panel) 70%);border-color:var(--gold);text-align:center}
+.rk{font-family:var(--display);font-size:2.6rem;color:var(--gold);line-height:1;letter-spacing:.04em}
+.card.raid{border:2px solid var(--danger);animation:alarm 1s infinite}
+@keyframes alarm{50%{box-shadow:0 0 2.5rem rgba(255,107,91,.45)}}
+.count{font-family:var(--display);font-size:4.2rem;color:var(--danger);text-align:center;line-height:1;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){.tbar i{transition:none}.coin,.stamp,.shake,.card.raid{animation-duration:.01s}.rain,.cig,.pp,.ringl,.sq,.flashlite,.cruise,.ping,.blink,body.dread::before{animation:none}}
+</style>
+</head>
+<body>
+<div class="screen" id="app"></div>
+<div class="modal" id="modal" hidden><div class="card" id="card"></div></div>
+<div id="fx" aria-hidden="true"></div>
+<div id="blackout" aria-hidden="true"></div>
+
+<script>
+const VERSION = "1.7.5";
+const FUND = "Evergreen Capital";
+const CITY = "Port Ashford";
+const RATES = [0.01, 0.02, 0.03, 0.05, 0.08];
+const APPEAL = [0.5, 0.8, 1.0, 1.3, 1.6];
+const MAX_LTS = 3;
+const MKT = [
+  {name:"Word of mouth", cost:0, leads:0, heat:0, desc:"Free. Relies on existing investors."},
+  {name:"Flyers & coffee meetings", cost:2e3, leads:5, heat:0},
+  {name:"Free-lunch seminars", cost:15e3, leads:25, heat:0.2},
+  {name:"Radio ads", cost:60e3, leads:90, heat:0.8},
+  {name:"TV & influencers", cost:250e3, leads:350, heat:1.8},
+  {name:"Global campaign", cost:1e6, leads:1400, heat:3.5},
+];
+const COVERS = [
+  {id:"none", short:"None", name:"Nothing this month", desc:"", cost:()=>0},
+  {id:"audit", short:"Audit", name:"Fake audit", desc:"Calms things down, trust up a little.", cost:o=>Math.max(25e3, o*0.01)},
+  {id:"gala", short:"Gala", name:"Charity gala", desc:"Trust up, calms things a little.", cost:o=>Math.max(20e3, o*0.006)},
+  {id:"bribe", short:"Bribe", name:"Bribe a regulator", desc:"Calms things a lot. Can backfire.", cost:o=>Math.max(50e3, o*0.02)},
+];
+const PREP = [
+  {id:"passport", name:"Fake passport", cost:40e3, odds:15, desc:"Better escape odds"},
+  {id:"shells", name:"Offshore shell companies", cost:150e3, odds:5, desc:"Keep your whole stash when you flee (otherwise 60%). Skimming draws less attention."},
+  {id:"villa", name:"Villa in a non-extradition country", cost:750e3, odds:20, heat:3, desc:"Much better escape odds"},
+  {id:"jet", name:"Private jet on standby", cost:3e6, odds:20, heat:2, desc:"Much better odds. Lets you try to flee during a raid."},
+];
+const ROLES = [
+  {id:"cfo", title:"Creative CFO", base:8e3, perk:"Cooks the books. Growth and skimming draw 30% less attention."},
+  {id:"marketer", title:"Marketing Director", base:6e3, perk:"30% more new investors every month."},
+  {id:"lawyer", title:"Shark Lawyer", base:10e3, perk:"Raids are less likely, and when one comes, you get 15 seconds instead of 10."},
+  {id:"source", title:"Inside Source", base:15e3, perk:"A detective on your payroll. One free background check a day and early black book pages. Now and then a tip, not always right."},
+  {id:"pr", title:"PR Chief", base:5e3, perk:"Keeps investor trust from sliding. A small boost every month."},
+  {id:"smuggler", title:"Smuggler", base:12e3, perk:"Knows the routes out. Big boost to escape readiness."},
+];
+const NAMES = ["Vince Moreau","Dana Kessler","Rocco Bellini","Priya Shah","Gil Ortega","Marla Quinn","Teddy Park","Sloane Avery","Hector Lund","Bev Okafor","Nico Draper","June Halloway"];
+
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const rand=(a,b)=>a+Math.random()*(b-a);
+const randn=()=>(Math.random()+Math.random()+Math.random()-1.5)*2;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+function fmt(n){const a=Math.abs(n),s=n<0?"−":"";
+  if(a>=1e9)return s+"$"+(a/1e9).toFixed(2)+"B";
+  if(a>=1e6)return s+"$"+(a/1e6).toFixed(a>=1e8?0:1)+"M";
+  if(a>=1e3)return s+"$"+(a/1e3).toFixed(a>=1e5?0:1)+"k";
+  return s+"$"+Math.round(a);}
+const num=n=>Math.round(n).toLocaleString("en-US");
+
+let S;
+function newGame(){
+  const names=shuffle(NAMES.slice());
+  const s={week:1,cash:25e3,owed:0,investors:0,stash:0,heat:0,trust:60,rate:1,mkt:2,cover:"none",skim:0,
+    prep:{},yacht:false,missed:0,peakOwed:0,peakInv:0,totalSkim:0,momDone:false,market:"normal",marketShift:false,
+    lts:[],candidates:ROLES.map((r,i)=>({role:r.id,name:names[i]})),milestones:{},report:null,
+    flags:{},flipped:[],fired:[],bribes:0,
+    story:makeStory(),named:[],revealNext:[],plantsAccepted:0,honestRejected:0,reportedAUM:0,claimed:0,desk:null,
+    rank:0,rankUp:false,life:{},partyWeek:0,chill:0,carSeen:false,vanSeen:false,repos:[],buff:null,hush:[],lastDeal:-10,whaleNext:null,route:null,narr:"Rule one: never say no to money.",
+    notes:["You rent a small office and print business cards. "+FUND+" opens Monday."],gazette:null};
+  s.gazette=makeGazette(s);
+  return s;
+}
+
+const tierOf=h=>h<15?0:h<35?1:h<55?2:h<75?3:h<90?4:5;
+const HEAT_WORDS=["Nobody's looking","Some online chatter","A reporter is digging","Regulators opened a file","Federal investigation","Agents are closing in"];
+function trustLabel(t){return t>=75?"Devoted":t>=50?"Confident":t>=30?"Uneasy":t>=15?"Nervous":"Panicking";}
+function loyaltyLabel(l){return l>=75?"Devoted":l>=55?"Loyal":l>=35?"Restless":"Shifty";}
+const has=(s,id)=>s.lts.some(l=>l.role===id);
+const role=id=>ROLES.find(r=>r.id===id);
+const salary=(s,l)=>Math.round(role(l.role).base*(1+s.owed/20e6)*l.raise);
+const payroll=s=>s.lts.reduce((t,l)=>t+salary(s,l),0);
+const hushTotal=s=>(s.hush||[]).reduce((t,h)=>t+h.amt,0);
+const upkeep=s=>payroll(s)+hushTotal(s);
+const HUSH_NAMES=["Regulator Pruitt","Inspector Dorsey","Examiner Vance","Deputy Commissioner Kemp","Auditor Lindqvist"];
+const MARKET={boom:{rec:1.3,wd:0.9},normal:{rec:1,wd:1},bust:{rec:0.6,wd:1.3}};
+function withdrawFrac(s){const r=RATES[s.rate];const panic=s.trust<40?(40-s.trust)/40*0.15:0;return (0.02+0.5*r)*MARKET[s.market].wd+panic;}
+function raidChance(s){const h=s.heat;return (h<35?0:Math.pow((h-35)/65,2)*0.4)*(has(s,"lawyer")?0.7:1);}
+function readiness(s){let o=20;for(const p of PREP)if(s.prep[p.id])o+=p.odds;if(has(s,"smuggler"))o+=15;if(s.yacht)o+=10;if(s.life&&s.life.island)o+=10;return o;}
+function readyLabel(r){return r<30?"Poor":r<50?"Fair":r<70?"Good":r<90?"Strong":"Excellent";}
+function escapeOdds(s,pen=0){return clamp(Math.round(readiness(s)-pen-s.heat*0.3),5,95);}
+const keepShare=s=>s.prep.shells?1:0.6;
+const coverCost=s=>COVERS.find(c=>c.id===s.cover).cost(s.owed);
+
+// ---------- Gazette ----------
+const SIGNALS=[
+  [["SEC budget trimmed again","Regulators say they'll focus on big banks this year."],
+   [`${FUND} sponsors Little League team`,"The Ashford Otters get new uniforms."],
+   ["Local investors enjoy a record year","Advisers report clients are \"happier than ever.\""],
+   ["Regulators buried in bank merger reviews","Staff call the backlog \"historic.\""]],
+  [["Forum users debate \"too good to be true\" returns","An anonymous poster lists five local funds. Yours is fourth."],
+   ["Columnist: beware of \"guaranteed\" returns","\"If a fund never has a down week, ask why.\""],
+   ["Finance podcast takes calls about small funds","One caller asks about a fund \"with a tree logo.\""],
+   ["Better Business Bureau logs new complaints","Most concern a roofing company. A few don't."]],
+  [["Business Weekly preparing exposé, sources say","The magazine has been calling former employees of several funds."],
+   ["Reporter spotted at county records office",`She requested filings for three ${CITY} firms.`],
+   ["Analyst: no real fund pays {pct}% a month","\"That's not investing. That's arithmetic.\""],
+   ["Former fund employee writes cryptic blog post","\"Some of us knew. We should have said something.\""]],
+  [["SEC opens inquiry into unnamed regional fund","The agency declined to name the firm."],
+   [`Regulators subpoena ${CITY} bank records`,"Three local banks received requests this month."],
+   ["Attorney general forms fraud task force","First target: \"funds with unusually steady returns.\""],
+   ["Auditors warn members about fake sign-offs","A memo cites \"a local fund using our letterhead.\""]],
+  [[`FBI adds white-collar agents in ${CITY}`,"The bureau says the move is \"not related to any specific case.\""],
+   ["Grand jury meets in sealed financial case","Witnesses include several bank employees."],
+   ["Banks told to flag offshore wires from local funds","A compliance bulletin went out Tuesday."],
+   ["Former fund staff seen entering federal building","Two arrived with lawyers."]],
+  [["Sources: arrests imminent in major fraud probe","\"Days, not weeks,\" one official said."],
+   ["Judge signs sealed warrants late Friday","The clerk's office closed early."],
+   ["Airport police receive updated watch list","Officials would not say who was added."],
+   ["Federal agents rent office across from local fund","The landlord says they paid a year up front."]],
+];
+const TIPS=["Nobody downtown has ever heard your name.","A few people grumble online. Nobody official cares.","A reporter has been asking about you. No cops yet.","The regulators have a file with your name on it.","The feds have an open case. You're in it.","Warrants are being drafted. Get out."];
+const HERRINGS=[
+  ["SEC cracks down on crypto exchanges","Three exchanges fined. No local firms named."],
+  ["FBI busts mortgage fraud ring in another state","Twelve arrested 900 miles away."],
+  ["Golden Horizon Fund founder gets 40 years","The judge called it \"a textbook pyramid.\""],
+  ["Congress debates tougher fraud laws","The bill isn't expected to pass this year."],
+  ["Bank teller arrested for raiding the tip jar","Police call it \"the smallest heist of the year.\""],
+  ["Investment-fraud documentary tops streaming charts","Viewers call it \"unbelievable.\""],
+  ["Regulators promise \"a new era of enforcement\"","They said the same thing last year."],
+];
+const FILLER=[
+  ["Otters win in extra innings","The Little League team stays undefeated."],
+  ["Heat wave expected through the weekend","Officials urge residents to drink water."],
+  ["Mayor opens new parking garage","It has 400 spaces and one elevator."],
+  ["Local bakery wins regional croissant award",""],
+  ["City council delays bike lane vote again",""],
+  ["Escaped llama found safe in library parking lot",""],
+  ["Celebrity chef opens downtown steakhouse","Booked solid through spring."],
+  ["Fog delays ferry service","Commuters bring extra coffee."],
+];
+const MARKET_NEWS={
+  boom:[["Markets roar to record highs","Everyone wants in on the action."],["Bull market enters its third month","Brokers report lines of new clients."]],
+  normal:[["Markets flat for the week","Analysts call it \"boring, in a good way.\""],["Interest rates unchanged","The central bank sees \"steady conditions.\""]],
+  bust:[["Stocks tumble on recession fears","Savers are pulling money out of everything."],["Layoffs spread as markets slide","Households are tightening their belts."]],
+};
+const MILESTONES=[
+  {k:"i100",t:s=>s.investors>=100,h:[`${FUND} passes 100 investors`,"\"Word of mouth is a beautiful thing,\" says founder."]},
+  {k:"i1000",t:s=>s.investors>=1000,h:[`${FUND} passes 1,000 investors`,"Founder calls it \"just the beginning.\""]},
+  {k:"i10000",t:s=>s.investors>=10000,h:[`${FUND} now has 10,000 investors`,"Its seminars draw bigger crowds than the Otters."]},
+  {k:"o10m",t:s=>s.owed>=1e7,h:[`${FUND} tops $10 million`,"Local fund outpaces national averages."]},
+  {k:"o100m",t:s=>s.owed>=1e8,h:[`${FUND}: $100 million and counting`,"Rivals say they \"can't figure out the strategy.\""]},
+  {k:"o1b",t:s=>s.owed>=1e9,h:[`${FUND} joins the billion-dollar club`,"Founder rings opening bell at regional exchange."]},
+];
+
+function makeGazette(s){
+  const used=new Set(), items=[];
+  const take=pool=>{let o=pool.filter(x=>!used.has(x[0]));if(!o.length)o=pool;const x=pick(o);used.add(x[0]);return x.map(t=>t.replace("{pct}",RATES[s.rate]*100));};
+  const signal=()=>take(SIGNALS[tierOf(clamp(s.heat+randn()*12,0,100))]);
+  items.push(signal());
+  if(Math.random()<0.6)items.push(signal());
+  items.push(take(MARKET_NEWS[s.market]));
+  // While nobody's looking, the paper loves you.
+  if((tierOf(s.heat)<=1||(s.rank>=4&&tierOf(s.heat)<=2))&&s.week>1&&Math.random()<0.7)items.push(take(PUFF));
+  for(const r of (s.repos||[]).splice(0))items.push(r);
+  if(Math.random()<0.6)items.push(take(HERRINGS));
+  if(s.lts.some(l=>l.loyalty<30)&&Math.random()<0.7)items.push(["Insider at unnamed fund said to be talking to prosecutors","Sources describe the person as \"senior staff.\""]);
+  for(const m of MILESTONES)if(!s.milestones[m.k]&&m.t(s)){s.milestones[m.k]=true;items.push(m.h);break;}
+  const news=shuffle(items);
+  // Lead with the market if it just turned; otherwise a random real story.
+  let lead=s.marketShift?news.findIndex(x=>MARKET_NEWS[s.market].some(m=>m[0]===x[0])):0;
+  if(lead<0)lead=0;
+  const leadItem=news.splice(lead,1)[0];
+  while(news.length<4)news.push(take(FILLER));
+  // The source only calls now and then, and is wrong about a third of the time.
+  const tip=has(s,"source")&&Math.random()<0.35?TIPS[clamp(tierOf(s.heat)+(Math.random()<0.35?pick([-2,-1,1,2]):0),0,5)]:null;
+  return {week:s.week,lead:leadItem,items:news,tip};
+}
+function gazetteDate(w){return gameDate(w).toLocaleDateString("en-US",{month:"long",year:"numeric"});}
+function showGazette(){
+  const g=S.gazette;
+  modal(`<div class="mast">The ${CITY} Ledger</div>
+    <div class="dateline"><span>${gazetteDate(g.week)}</span><span>Month ${g.week} · 25¢</span></div>
+    <div class="lead"><h4>${g.lead[0]}</h4><p>${g.lead[1]}</p></div>
+    <div class="stories">${g.items.map(i=>`<div class="story"><h5>${i[0]}</h5>${i[1]?`<p>${i[1]}</p>`:""}</div>`).join("")}</div>
+    ${g.tip?`<div class="tipnote"><b>Note from your source:</b> ${g.tip}</div>`:""}
+    <div class="btns"><button class="big alt" data-act="close">Back to the office</button></div>`,"paper");
+}
+
+// ---------- Render ----------
+const $=id=>document.getElementById(id);
+const ROLE_SHORT={cfo:"CFO",marketer:"Marketing",lawyer:"Lawyer",source:"Source",pr:"PR",smuggler:"Smuggler"};
+const loyColor=l=>l<35?"var(--danger)":l<55?"var(--warn)":"var(--money)";
+const plain=t=>t.replace(/<[^>]+>/g,"");
+// Drop selections the player can no longer afford.
+function fixSelections(){
+  const avail=S.cash-upkeep(S);
+  if(MKT[S.mkt].cost>avail){let i=S.mkt;while(i>0&&MKT[i].cost>avail)i--;S.mkt=i;}
+  if(coverCost(S)>avail-MKT[S.mkt].cost)S.cover="none";
+}
+
+// The planning screen. Everything fits on one page; detail lives in overlays.
+function render(){
+  fixSelections();
+  const s=S, m=MKT[s.mkt], cvCost=coverCost(s), avail=s.cash-upkeep(s), cv=COVERS.find(c=>c.id===s.cover), rep=s.report;
+  const canMore=s.mkt+1<MKT.length&&MKT[s.mkt+1].cost<=avail-cvCost;
+  const slots=[0,1,2].map(i=>{const l=s.lts[i];
+    return l?`<button class="slot" data-act="crew"><i class="dot" style="background:${loyColor(l.loyalty)}"></i><span>${ROLE_SHORT[l.role]}</span></button>`
+      :`<button class="slot empty" data-act="crew"><span>+ Hire</span></button>`;}).join("");
+  const owned=PREP.filter(p=>s.prep[p.id]).length;
+  $("app").innerHTML=`
+  <header class="bar"><button class="brand" data-act="rankinfo" aria-label="Your status and perks">${RANKS[s.rank].t.toUpperCase()} ›<small>${RANKS[s.rank].office}</small></button><div class="week">Month ${s.week}</div>
+    <button class="chip" data-act="snd" aria-label="${SND.on?"Mute sound":"Turn sound on"}">${SND.on?"♪ On":"♪ Off"}</button><button class="chip" data-act="help" aria-label="How to play">?</button><button class="chip paper" data-act="paper">Ledger</button></header>
+  <div class="street">${streetSVG(s)}</div>
+  <div class="stats">
+    <div class="stat"><div class="k">Fund cash</div><div class="v ${s.cash<0?"neg":"money"}" id="tCash">${fmt(s.cash)}</div></div>
+    <div class="stat"><div class="k">Owed</div><div class="v" id="tOwed">${fmt(s.owed)}</div></div>
+    <div class="stat"><div class="k">Investors</div><div class="v" id="tInv">${num(s.investors)}</div></div>
+    <button class="stat" data-act="life"><div class="k">Stash · <em>spend ›</em></div><div class="v gold" id="tStash">${fmt(s.stash)}</div></button>
+  </div>
+  <div class="trust">Trust<div class="tbar"><i style="width:${s.trust}%"></i></div><b class="${s.trust<30?"bad":s.trust<50?"warn":"good"}">${trustLabel(s.trust)}</b></div>
+  <p class="narr">“${s.narr}”</p>
+  <button class="last" data-act="report"><span class="k"><span>${rep?"Last month":"Welcome"}</span><span>Details ›</span></span>
+    <span class="ln1">${rep?`+${num(rep.newInv)} investors · ${fmt(rep.dep)} in · <span class="${rep.paid<rep.due*0.999?"bad":""}">paid ${fmt(rep.paid)} of ${fmt(rep.due)}</span>`:"Nobody has heard of you yet."}</span>
+    <span class="ln2">${s.notes.length?plain(s.notes[0]):"Nothing else to report."}${s.notes.length>1?` <em>+${s.notes.length-1} more</em>`:""}</span></button>
+  <div class="panel">
+    <div class="row"><div class="lab">Promised return<small>per month</small></div>
+      <div class="seg mono">${RATES.map((x,i)=>`<button data-act="rate" data-v="${i}" class="${i===s.rate?"on":""}">${x*100}%</button>`).join("")}</div></div>
+    <div class="row"><div class="lab">Marketing</div>
+      <div class="step"><button data-act="mkt" data-v="${s.mkt-1}" ${s.mkt>0?"":"disabled"} aria-label="Less marketing">‹</button>
+      <span><b>${m.name}</b><small>${m.cost?fmt(m.cost)+" a month":"Free"}</small></span>
+      <button data-act="mkt" data-v="${s.mkt+1}" ${canMore?"":"disabled"} aria-label="More marketing">›</button></div></div>
+    <div class="row"><label class="lab" for="skim">Skim<small id="skimAmt"></small></label>
+      <div class="skim"><input type="range" id="skim" min="0" max="50" step="5" value="${Math.round(s.skim*100)}"><b id="skimPct"></b></div></div>
+    <div class="row"><div class="lab">Cover-up<small>${cv.id==="none"?"Nothing this month":`${fmt(cvCost)}. ${cv.desc}`}</small></div>
+      <div class="seg">${COVERS.map(c=>{const dis=c.id!==s.cover&&c.cost(s.owed)>avail-m.cost;
+        return `<button data-act="cover" data-v="${c.id}" class="${c.id===s.cover?"on":""}" ${dis?"disabled":""}>${c.short}</button>`;}).join("")}</div></div>
+    <div class="row"><div class="lab">Crew<small>${s.lts.length?`${fmt(payroll(s))} a month`:"Nobody yet"}${s.hush.length?`<br><span class="warn">+ ${fmt(hushTotal(s))} hush</span>`:""}</small></div><div class="crew">${slots}</div></div>
+    <div class="row"><div class="lab">Escape plan<small>${owned} of ${PREP.length} bought</small></div>
+      <button class="planbtn" data-act="plan"><span>Readiness: <b>${readyLabel(readiness(s))}</b></span><span>›</span></button></div>
+  </div>
+  <div class="forecast" id="forecast"></div>
+  <div class="actions"><button class="big run" data-act="run">Run</button><button class="big go" data-act="end">Open the office →</button></div>`;
+  $("skim").addEventListener("input",e=>{S.skim=e.target.value/100;updateSkim();});
+  updateSkim();
+  setChill(s);
+  // Numbers roll up to their new values after each month.
+  const now={cash:s.cash,owed:s.owed,inv:s.investors,stash:s.stash};
+  if(shown&&(shown.cash!==now.cash||shown.owed!==now.owed||shown.inv!==now.inv||shown.stash!==now.stash)){
+    countUp($("tCash"),shown.cash,now.cash,fmt);countUp($("tOwed"),shown.owed,now.owed,fmt);
+    countUp($("tInv"),shown.inv,now.inv,num);countUp($("tStash"),shown.stash,now.stash,fmt);
+  }
+  shown=now;
+}
+
+function updateSkim(){
+  const s=S, left=Math.max(0,s.cash-upkeep(s)-MKT[s.mkt].cost-coverCost(s)), skim=Math.floor(left*s.skim), after=left-skim;
+  const due=s.owed*(1+RATES[s.rate])*withdrawFrac(s);
+  $("skimPct").textContent=Math.round(s.skim*100)+"%";
+  $("skimAmt").textContent=skim?`${fmt(skim)} to you`:"Nothing";
+  $("forecast").innerHTML=`<span>Cash after spending <b>${fmt(after)}</b></span>
+    <span class="${due>after*2?"bad":due>after?"warn":""}">Payouts due ≈ <b>${fmt(due)}</b></span>`;
+}
+
+function showReport(){
+  const s=S, rep=s.report;
+  modal(`<h3>${rep?`Week ${s.week-1} at the office`:"Welcome"}</h3>
+    ${rep?`<div class="report"><div class="ln"><span>New investors</span><span>+${num(rep.newInv)}</span></div>
+      <div class="ln"><span>Deposits in</span><span class="good">+${fmt(rep.dep)}</span></div>
+      <div class="ln"><span>Payouts made</span><span class="${rep.paid<rep.due*0.999?"bad":""}">−${fmt(rep.paid)} of ${fmt(rep.due)}</span></div>
+      <div class="ln"><span>Marketing and cover-ups</span><span>−${fmt(rep.spend)}</span></div>
+      ${rep.pay?`<div class="ln"><span>Crew salaries</span><span>−${fmt(rep.pay)}</span></div>`:""}
+      ${rep.hush?`<div class="ln"><span>Hush money</span><span class="warn">−${fmt(rep.hush)}</span></div>`:""}
+      ${rep.life?`<div class="ln"><span>Upkeep on your toys (from stash)</span><span>−${fmt(rep.life)}</span></div>`:""}
+      ${rep.skim?`<div class="ln"><span>Skimmed to your stash</span><span class="good">+${fmt(rep.skim)}</span></div>`:""}
+      ${rep.left?`<div class="ln"><span>Investors who cashed out and left</span><span>−${num(rep.left)}</span></div>`:""}</div>`:""}
+    ${s.notes.length?`<div class="report">${s.notes.map(n=>`<div class="news">${n}</div>`).join("")}</div>`:""}
+    <div class="btns"><button class="big alt" data-act="close">Back</button></div>`);
+}
+function showCrew(){
+  const s=S;
+  let h=`<h3>Your crew · ${s.lts.length} of ${MAX_LTS}</h3><p class="hint">Salaries rise as the fund grows. Loyalty drops when things get hot or pay is missed. Disloyal lieutenants talk.</p>`;
+  for(const l of s.lts){const r=role(l.role),bonus=salary(s,l)*4;
+    h+=`<div class="lt"><div class="top"><b>${l.name} · ${r.title}</b><span class="${l.loyalty<35?"bad":l.loyalty<55?"warn":"good"}">${loyaltyLabel(l.loyalty)}</span></div>
+      <small>${r.perk} Salary ${fmt(salary(s,l))} a month.</small>
+      <div class="acts"><button class="mini" data-act="bonus" data-v="${l.role}" ${s.cash<bonus?"disabled":""}>Pay bonus · ${fmt(bonus)}</button><button class="mini" data-act="fire" data-v="${l.role}">Fire</button></div></div>`;}
+  const open=s.candidates.filter(c=>!has(s,c.role));
+  if(open.length)h+=`<div class="mh">For hire</div><div class="opts">${open.map(c=>{const r=role(c.role);
+    return `<button class="opt" data-act="hire" data-v="${c.role}" ${s.lts.length>=MAX_LTS?"disabled":""}><span class="nm">${c.name} · ${r.title}<small>${r.perk}</small></span><span class="c">${fmt(salary(s,{role:c.role,raise:1}))}/mo</span></button>`;}).join("")}</div>`;
+  modal(h+`<div class="btns"><button class="big alt" data-act="close">Back</button></div>`);
+}
+function showPlan(){
+  const s=S;
+  modal(`<h3>Escape plan · ${readyLabel(readiness(s))}</h3>
+    <p class="hint">Paid from your stash (${fmt(s.stash)}). Readiness is your plan. Your real odds also depend on how close the authorities are. If you flee now you keep ${Math.round(keepShare(s)*100)}% of the stash.</p>
+    <div class="opts">${PREP.map(p=>{const own=s.prep[p.id];
+      return `<button class="opt ${own?"owned":""}" data-act="buy" data-v="${p.id}" ${own||s.stash<p.cost?"disabled":""}><span class="nm">${p.name}<small>${p.desc}</small></span><span class="c">${own?"Owned":fmt(p.cost)}</span></button>`;}).join("")}</div>
+    <div class="btns"><button class="big alt" data-act="close">Back</button></div>`);
+}
+function showHelp(){
+  modal(`<h3>How to play <small class="hint">v${VERSION}</small></h3><div class="report">
+    <p>Each month, read the Ledger, make your plans on this screen, then open the office and work the desk.</p>
+    <p><b>The pitch.</b> At the desk, read each applicant and pitch them: safety, exclusivity or greed. The right pitch lands a bigger check. The wrong one can send them out the door.</p>
+    <p><b>Your stash.</b> Tap it to spend on the good life. It impresses investors. It also impresses reporters.</p>
+    <p><b>Promised return.</b> Higher returns pull in more investors, but more of them cash out each month and the numbers start to look suspicious.</p>
+    <p><b>Skim.</b> Moves fund cash into your stash. Only your stash counts when you get away. Big transfers draw attention.</p>
+    <p><b>Cover-up.</b> One a month. It calms things down at a price.</p>
+    <p><b>Crew.</b> Up to three lieutenants with perks and salaries. Unhappy ones talk.</p>
+    <p><b>Nobody tells you how close the feds are.</b> Read the Ledger and judge for yourself. Run before they arrive.</p></div>
+    <div class="btns"><button class="big alt" data-act="close">Got it</button></div>`);
+}
+
+// ---------- Weekly simulation ----------
+function endWeek(){
+  const s=S, r=RATES[s.rate], m=MKT[s.mkt], notes=s.revealNext.slice();
+  s.revealNext=[];
+  let dHeat=0, dTrust=0;
+  const cfo=has(s,"cfo")?0.7:1;
+
+  const pay=payroll(s);
+  if(s.cash>=pay){s.cash-=pay;for(const l of s.lts)l.loyalty+=1;}
+  else if(pay>0){s.cash=Math.max(0,s.cash-pay);for(const l of s.lts)l.loyalty-=20;notes.push("You couldn't make payroll. Your lieutenants noticed.");}
+
+  // Everyone you've bribed wants paying, every month. Miss a payment and they talk.
+  let hushPaid=0;
+  for(const h of s.hush.slice()){
+    if(s.cash>=h.amt){s.cash-=h.amt;hushPaid+=h.amt;}
+    else{s.hush=s.hush.filter(x=>x!==h);dHeat+=10;notes.push(`You missed ${h.who}'s payment. ${h.who} stopped taking your calls.`);}
+  }
+
+  const cvCost=coverCost(s);
+  s.cash-=m.cost+cvCost;
+  // The hotter it gets, the less your fixes work. You keep trying anyway.
+  const fixPower=clamp(1-s.heat/130,0.25,1), weak=fixPower<0.6;
+  if(s.cover==="audit"){dHeat-=8*fixPower;dTrust+=2;notes.push(weak?"The audit landed with a thud. Nobody seemed reassured.":"A respectable-looking firm signs off on your books.");}
+  if(s.cover==="gala"){dTrust+=5;dHeat-=3*fixPower;notes.push(weak?"Your gala made the papers. Mostly the photos of the champagne tower.":"Your charity gala makes the society pages.");}
+  if(s.cover==="bribe"){s.bribes++;
+    if(Math.random()<0.15+s.heat/250){dHeat+=25;notes.push("The regulator you tried to bribe reported you.");}
+    else{dHeat-=15*fixPower;const who=pick(HUSH_NAMES.filter(n=>!s.hush.some(h=>h.who===n)))||"Another regulator",amt=Math.round(cvCost*0.25/1e3)*1e3;
+      s.hush.push({who,amt});notes.push(`A regulator quietly loses your file. ${who} now expects a "consulting fee" of ${fmt(amt)} every month.`);}}
+  s.cover="none";
+
+  const skim=Math.floor(Math.max(0,s.cash)*s.skim);
+  s.cash-=skim; s.stash+=skim; s.totalSkim+=skim;
+  dHeat+=skim/Math.max(s.owed,50e3)*20*(s.prep.shells?0.5:1)*cfo;
+
+  const trustF=Math.max(0.1,s.trust/70);
+  const leads=m.leads+s.investors*0.03;
+  const newInv=Math.max(0,Math.round(leads*APPEAL[s.rate]*trustF*MARKET[s.market].rec*(has(s,"marketer")?1.3:1)*rand(0.7,1.3)));
+  const dep=Math.round(newInv*5e3*(1+0.04*s.week)*rand(0.8,1.2));
+  s.investors+=newInv; s.cash+=dep; s.owed+=dep;
+
+  s.owed+=s.owed*r;
+  const wf=withdrawFrac(s), due=s.owed*wf, paid=Math.min(Math.max(s.cash,0),due);
+  s.cash-=paid; s.owed-=paid;
+  const left=Math.min(s.investors,Math.round(s.investors*(0.006+Math.max(0,wf-0.02-0.5*r)*0.5)));
+  s.investors-=left;
+
+  if(due>0&&paid<due*0.999){s.missed++;dTrust-=22;dHeat+=12;for(const l of s.lts)l.loyalty-=5;notes.push(`You missed ${fmt(due-paid)} in payouts. Investors are calling the office.`);}
+  else{s.missed=0;dTrust+=r>=0.05?1:0.5;}
+  if(has(s,"pr"))dTrust+=1;
+  if(s.market==="bust")dTrust-=2;
+  // Trust doesn't build itself. Left alone, it drifts back to lukewarm.
+  dTrust+=(50-s.trust)*0.06;
+
+  // The good life costs money every month. If the stash can't cover it, it gets repossessed, in public.
+  let lifeUp=0;
+  for(const it of LIFE.filter(x=>x.upkeep&&s.life[x.id])){
+    if(s.stash>=it.upkeep){s.stash-=it.upkeep;lifeUp+=it.upkeep;}
+    else{s.life[it.id]=false;if(it.id==="yacht")s.yacht=false;dTrust-=15;dHeat+=5;s.repos.push(it.repo);
+      notes.push(`Repo men took your ${it.name.toLowerCase()}. In daylight, with a crowd watching.`);}
+  }
+
+  dHeat+=(0.6*Math.log10(Math.max(s.owed,1e4)/1e4)+s.investors/1000*0.3)*cfo+m.heat+Math.max(0,r-0.03)*80-1;
+  if(s.trust<30)dHeat+=2;
+  dHeat+=RANKS[s.rank].heat;
+  s.heat=clamp(s.heat+dHeat,0,100); s.trust=clamp(s.trust+dTrust,0,100);
+
+  // Lieutenants get nervous when things are hot. Shifty ones may flip.
+  for(const l of s.lts.slice()){
+    if(s.heat>50)l.loyalty-=(s.heat-50)/8;
+    l.loyalty=clamp(l.loyalty,0,100);
+    if(l.loyalty<30&&Math.random()<(30-l.loyalty)/60){
+      s.lts=s.lts.filter(x=>x!==l);s.flipped.push(l);s.heat=clamp(s.heat+25,0,100);
+      notes.push(`${l.name} stopped coming to work. Their desk has been cleaned out.`);
+    }
+  }
+
+  // Market drifts between boom, normal and bust.
+  s.marketShift=false;
+  if(Math.random()<0.12){s.market=s.market==="normal"?pick(["boom","bust"]):"normal";s.marketShift=true;}
+
+  s.peakOwed=Math.max(s.peakOwed,s.owed); s.peakInv=Math.max(s.peakInv,s.investors);
+  const nr=rankOf(s);if(nr>s.rank){s.rank=nr;s.rankUp=true;
+    // Bigger fund, bigger names. The lie changes, and you have to keep up with it.
+    if(nr>=2){s.story.auditor=decoy(s,"auditor");s.story.bank=decoy(s,"bank");
+      notes.push(`<b>Your cover story changed.</b> Bigger fund, bigger names: your auditor is now ${s.story.auditor}, and your money "sits" at ${s.story.bank}.`);}}
+  const nx=RANKS[s.rank+1];if(nx&&s.peakOwed>=nx.min&&image(s)<nx.img&&s.imgHint!==s.rank+1){s.imgHint=s.rank+1;notes.push(`You have the money to be a ${nx.t.toLowerCase()}. You don't look like one yet. (Image ${image(s)} of ${nx.img}. Tap your stash.)`);}
+  // What the player feels instead of sees: a noisy reading of the heat.
+  s.chill=clamp((s.heat+randn()*8)/100,0,1);
+  s.prevCar=s.carSeen;s.prevVan=s.vanSeen;
+  s.carSeen=Math.random()<clamp((s.heat-20)/80,0,1)*0.9;
+  s.vanSeen=s.carSeen&&s.chill>0.7&&Math.random()<0.7;
+  s.narr=narrate(s);
+  s.report={newInv,dep,due,paid,skim,left,pay,hush:hushPaid,life:lifeUp,spend:m.cost+cvCost};
+  s.reportedAUM=s.owed; s.claimed+=r*100;
+  const known=rulesKnown(s).length;
+  s.week++;
+  for(const rl of rulesKnown(s).slice(known))notes.push(`<b>New page in your black book:</b> ${rl.t}`);
+  s.notes=notes;
+
+  if(s.missed>=2||s.trust<=0){collapse();return;}
+  if(s.week>=3&&Math.random()<0.55){showEvent();return;}
+  raidCheck();
+}
+
+function raidCheck(){
+  const s=S; s.heat=clamp(s.heat,0,100); s.trust=clamp(s.trust,0,100);
+  for(const l of s.lts)l.loyalty=clamp(l.loyalty,0,100);
+  if(Math.random()<raidChance(s)){startRaid();return;}
+  s.gazette=makeGazette(s);
+  render();
+  if(s.rankUp){s.rankUp=false;showRankUp();}else showGazette();
+}
+
+function collapse(){
+  const s=S;
+  modal(`<div class="tag">Month ${s.week}</div><h3>The fund has collapsed</h3><p>You can't pay what you owe and investors are lining up outside. The authorities will be here within hours.</p>
+    <p>Escape readiness: ${readyLabel(readiness(s))}. If you make it, you keep ${fmt(s.stash*keepShare(s))}.</p>
+    <p class="hint">You'll have 30 seconds.</p>
+    <div class="btns"><button class="big run" data-act="nightcollapse">Run</button></div>`);
+}
+
+function confirmRun(){
+  const s=S;
+  modal(`<h3>Flee now?</h3><p>Escape readiness: <b>${readyLabel(readiness(s))}</b>. The closer the authorities are, the worse your real odds.</p><p>If you make it, you keep <b class="good">${fmt(s.stash*keepShare(s))}</b>${s.prep.shells?"":" (40% gets frozen without shell companies)"}. If you're caught, you lose everything.</p>
+    <p class="hint">Once you start, you'll have 45 seconds to get out.</p>
+    <div class="btns"><button class="big run" data-act="flee" data-v="0">Disappear</button><button class="big alt" data-act="close">Stay another month</button></div>`);
+}
+
+function attemptEscape(pen,how){
+  const o=escapeOdds(S,pen);
+  ending(Math.random()*100<o?"escaped":"failed",o,how||(pen===20?"collapse":"run"));
+}
+
+function sentence(s){return Math.round(clamp(4+Math.log10(Math.max(s.owed+s.totalSkim,1e5)/1e5)*35,4,150)*(has(s,"lawyer")?0.5:1)*(s.calledLawyer?0.8:1));}
+function ending(kind,odds,how){
+  const s=S, kept=Math.round(s.stash*keepShare(s));
+  const tag=kind==="escaped"?"You got away":"Caught";
+  const head=pick(kind==="escaped"?[`${FUND} founder vanishes; ${fmt(s.peakOwed)} missing`,`Where is ${FUND}'s founder?`,`${FUND} offices found empty except for a fern`]
+    :kind==="failed"?[`${FUND} founder caught fleeing`,`Fund boss nabbed on the way out`,`${FUND} founder's getaway ends early`]
+    :[`Federal agents raid ${FUND}`,`${FUND} founder in handcuffs`,`"Nothing but upside": ${FUND} founder arrested`]);
+  const story=epilogue(s,kind,how).map(([h,t])=>`<div class="ep"><div class="tag">${h}</div><p>${t}</p></div>`).join("");
+  const score=kind==="escaped"?kept:0;
+  let best=0;try{best=+localStorage.getItem("ponzi-best")||0;if(score>best)localStorage.setItem("ponzi-best",score);}catch(e){}
+  modal(`<div class="tag">${tag} · month ${s.week}</div><div class="headline">${head}</div>${story}
+    <div class="endstats"><span>Months running</span><span>${s.week}</span><span>Peak investors</span><span>${num(s.peakInv)}</span>
+    <span>Peak owed</span><span>${fmt(s.peakOwed)}</span><span>Total skimmed</span><span>${fmt(s.totalSkim)}</span>
+    <span>How close they really were</span><span>${HEAT_WORDS[tierOf(s.heat)]}</span>
+    ${odds!=null?`<span>Your real escape odds</span><span>${odds}%</span>`:""}
+    <span>Score (stash kept)</span><span class="${score?"good":"bad"}">${fmt(score)}</span><span>Best escape</span><span>${fmt(Math.max(best,score))}</span></div>
+    <div class="btns"><button class="big go" data-act="restart">New scheme</button></div>`);
+}
+
+// ---------- The desk ----------
+// A turn-based workday: every card and every check spends minutes until 5 pm.
+const DAY=480, BASE=10, T_REF=30, T_BG=60, T_ASK=20, T_TALK=15;
+const formTime=s=>has(s,"cfo")?20:45;
+const FIRST=["Thomas","Linda","Marcus","Grace","Owen","Beatrice","Rafael","Nora","Desmond","Ivy","Curtis","Helen","Arjun","Dolores","Frank","Yuki","Leon","Martha","Elliot","Rosa"];
+const LAST=["Hale","Whitaker","Moreno","Lindqvist","Okoro","Brandt","Castillo","Pruitt","Nakamura","Feld","Dorsey","Abara","Kemp","Vance","Ostrowski","Bell","Ferreira","Gallo"];
+const JOBS=[["Dentist","Ashford Dental Group"],["Orthopedic surgeon","St. Brigid's Hospital"],["Car dealer","Bayline Motors"],["Retired pilot","Coastal Airways pension"],["Restaurant owner","Gallo's Trattoria"],["Real estate agent","Harborview Realty"],["Software engineer","Kestrel Systems"],["Retiree","Living off savings"],["Plastic surgeon","Ashford Aesthetics"],["Freelance photographer","Self-employed"],["Accountant","Dunmore & Pike"],["Retired judge","State pension"],["Management consultant","Self-employed"]];
+const STREETS=["Birch Lane","Ocean Ave","Harbor Rd","Maple Court","Cliffside Dr","Elm St","Pelican Way","Lighthouse Rd"];
+const BANKS=["Harbor Savings","First Ashford Trust","Coastal Mutual","Bayline Credit Union"];
+const PAY=["Cashier's check","Wire","Personal check"];
+const HONEST_Q=["My brother-in-law can't stop talking about you.","I just want something steady for retirement.","Is it true you've never had a down month?","My financial adviser is going to be so jealous.","How soon can I add more?","Can I bring my accountant next time?","Where do the returns come from, roughly?"];
+const PLANT_Q=["I'm a big believer in steady returns.","Would you walk me through the strategy?","How many investors do you have, ballpark?","I'd love to see a recent statement, if that's okay.","Do you keep the money here or overseas?"];
+const NOTES_Q="Mind if I take a few notes? I like to keep track of things.";
+const CHANNEL=["a friend","a flyer","your seminar sign-up sheet","your radio ad","your TV ad","your global campaign"];
+const RULES=[
+  {w:1,t:"The name on the ID must match the application exactly."},
+  {w:1,t:"Check the ID's expiry date against today's date. Real people renew. Cover identities get sloppy."},
+  {w:2,t:"The birth year on the ID has to fit the age on the form. This year minus the birth year, give or take one."},
+  {w:3,t:"Federal agents bank at the Federal Employees Credit Union. Never take their checks."},
+  {w:4,t:"Plants usually say yes to any pitch. Real people only bite on the one that fits them."},
+  {w:5,t:"200 Harbor Plaza is the federal building. Nobody lives there."},
+  {w:6,t:"Checks from Ashford Federal Savings bounce. The bank closed last spring."},
+  {w:7,t:"Reporters call themselves freelance writers and like to take notes."},
+  {w:8,t:"The signature on the form has to match the signature on the ID."},
+  {w:9,t:"Referrals can be faked. If the referral isn't one of your investors, it's a plant."},
+  {w:11,t:"State regulators pay by wire from Capitol Savings & Loan."},
+];
+const rulesKnown=s=>RULES.filter(r=>s.week>=r.w-(has(s,"source")?4:0));
+// Every scheme tells its own lie. The cover story is drawn fresh each game, and the wrong answers on forms come from the same pools.
+const STORY_POOLS={
+  auditor:["Pell & Marsh, CPAs","Friehling & Sons","Hadley Brothers Accounting","Kemp & Kemp, CPAs","Ostrowski Audit Group"],
+  bank:["First Ashford Trust","Harbor Savings","Coastal Mutual","Bayline Credit Union","Port Ashford National"],
+  strategy:["Split-strike options trading","Currency arbitrage","Distressed real estate notes","Pre-IPO tech stakes","Commodity futures"],
+  wires:["Client redemptions","Trade settlements","Fund administration fees","Margin calls at the broker"],
+  position:["S&P 100 index options","Swiss franc forwards","Gold futures","Private tech shares","Municipal bonds"],
+};
+const makeStory=()=>Object.fromEntries(Object.entries(STORY_POOLS).map(([k,v])=>[k,pick(v)]));
+const decoy=(s,k)=>pick(STORY_POOLS[k].filter(x=>x!==s.story[k]));
+const VIS_TAGS=[{l:"Keeps to themselves",h:0,t:-1},{l:"Posts about everything online",h:5,t:-4},{l:"Their son is a lawyer",h:7,t:-2},{l:"Brought in 30 other investors",h:1,t:-8}];
+const HID_TAGS=[{l:"Treasurer of a church investment group",h:2,t:-10},{l:"Dating a Ledger reporter",h:10,t:-2},null,null];
+const PANIC_Q=["I read the Ledger. I want ALL of it back. Today.","My son says your fund is a scam. Prove him wrong. Pay me.","Everyone at church is pulling out. I'm not going to be the last one.","I've called nine times. I'm not leaving this lobby without a check."];
+const WD_Q=["My daughter's wedding is in June.","The roof is leaking. I need it by Friday.","Just taking some profits. You understand.","My accountant says I should diversify.","I'm buying a boat!","I'm settling my late husband's estate."];
+const BG={agent:"Employment records sealed. Previous address: FBI Academy housing, Quantico, VA.",reporter:"Byline found: Port Ashford Ledger, business desk.",regulator:"On the payroll of the State Securities Division since 2014."};
+const REVEAL={agent:n=>`${n}, the investor you signed last month, is an FBI agent. They took a lot of notes.`,
+  reporter:n=>`${n}, the investor you signed last month, is a Ledger reporter. Their article is coming.`,
+  regulator:n=>`${n}, the investor you signed last month, works for the State Securities Division.`};
+const DODGE={agent:n=>`${n}, whom you turned away, was seen walking into 200 Harbor Plaza.`,
+  reporter:n=>`${n}, whom you turned away, wrote a column: "The fund that wouldn't take my money."`,
+  regulator:n=>`${n}, whom you turned away, turned out to be a state regulator.`};
+
+const gameDate=w=>new Date(2027,w-1,1);
+const mmYYYY=d=>String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();
+const monthsFrom=(w,m)=>{const d=gameDate(w);return new Date(d.getFullYear(),d.getMonth()+m,1);};
+function clock(t){const m=540+(DAY-t);let h=Math.floor(m/60);const mm=String(m%60).padStart(2,"0"),ap=h>=12?"pm":"am";if(h>12)h-=12;return `${h}:${mm} ${ap}`;}
+const newName=()=>pick(FIRST)+" "+pick(LAST);
+function misspell(w){const v="aeiou";for(let i=1;i<w.length;i++)if(v.includes(w[i]))return w.slice(0,i)+v[(v.indexOf(w[i])+1+Math.floor(Math.random()*4))%5]+w.slice(i+1);return w+"e";}
+
+// What each kind of person tends to want. Jobs are a hint, not a guarantee.
+const JOB_PREF={"Retiree":{safety:.8,status:.1,greed:.1},"Retired pilot":{safety:.6,greed:.4},"Retired judge":{safety:.6,status:.4},"Accountant":{safety:.6,greed:.4},
+  "Dentist":{status:.5,greed:.3,safety:.2},"Orthopedic surgeon":{status:.6,greed:.4},"Plastic surgeon":{status:.7,greed:.3},"Car dealer":{status:.5,greed:.5},
+  "Real estate agent":{status:.5,greed:.5},"Software engineer":{greed:.6,status:.2,safety:.2},"Restaurant owner":{greed:.5,safety:.5},
+  "Freelance photographer":{greed:.6,status:.4},"Management consultant":{greed:.5,status:.5}};
+const PREFS=["safety","status","greed"];
+function wpick(w){let r=Math.random();for(const k in w){r-=w[k];if(r<=0)return k;}return Object.keys(w)[0];}
+const NEUTRAL_Q=["Can I bring my accountant next time?","Where do the returns come from, roughly?","How does the paperwork work?","My neighbor gave me your card."];
+const SMALLTALK={
+  safety:["They spend twenty minutes on how their pension barely covers groceries.","They ask twice whether the money is insured.","They tell you about a cousin who lost everything in 2008."],
+  status:["They mention their country club membership three times.","They want to know who else invests with you. By name.","They ask if you'll be at the hospital gala."],
+  greed:["They ask how fast your best client doubled their money.","They show you a screenshot of their crypto gains. Then their losses.","They want to know if there's a bigger tier."],
+};
+
+function makeApplicant(s){
+  const plant=s.week>1&&Math.random()<0.05+s.heat/100*0.45;
+  const first=pick(FIRST), last=pick(LAST), job=pick(JOBS), age=Math.round(rand(29,76)), yr=gameDate(s.week).getFullYear();
+  const a={kind:"app",plant,type:plant?pick(["agent","agent","reporter","regulator"]):null,
+    born:yr-age-(Math.random()<0.5?1:0),sig:`${first[0]}. ${last}`,idSig:`${first[0]}. ${last}`,
+    name:`${first} ${last}`,idName:`${first} ${last}`,age,job:job[0],employer:job[1],
+    address:`${Math.floor(rand(2,300))} ${pick(STREETS)}`,pay:`${pick(PAY)}, ${pick(BANKS)}`,
+    quote:pick(plant?PLANT_Q.concat(HONEST_Q):HONEST_Q),
+    ref:s.named.length&&Math.random()<0.6?pick(s.named):null,fakeRef:false,channel:CHANNEL[s.mkt],
+    exp:mmYYYY(monthsFrom(s.week,Math.round(rand(3,60)))),
+    dep:Math.round(Math.max(5e3*(1+0.04*s.week)*rand(3,10),s.owed*rand(0.003,0.012))/1e3)*1e3,checks:{}};
+  a.dep=Math.round(a.dep*(1+RANKS[s.rank].dep)/1e3)*1e3;
+  if(plant){
+    // Most plants agree to any pitch. Some play it cool, like a real person would.
+    a.eager=Math.random()<0.75;a.pref=pick(PREFS);
+    const pool={agent:["mismatch","expired","fecu","fedaddr","fakeref","dob","sig"],reporter:["freelance","fakeref","expired","mismatch","sig"],regulator:["capitol","fedaddr","mismatch","dob"]}[a.type];
+    const n=Math.random()<0.1?0:Math.random()<0.6?1:2;
+    for(const t of shuffle(pool.slice()).slice(0,n)){
+      if(t==="mismatch")a.idName=`${first} ${misspell(last)}`;
+      if(t==="expired")a.exp=mmYYYY(monthsFrom(s.week,-Math.round(rand(1,18))));
+      if(t==="fecu")a.pay="Cashier's check, Federal Employees Credit Union";
+      if(t==="fedaddr")a.address="200 Harbor Plaza";
+      if(t==="fakeref"){let n2;do n2=newName();while(s.named.includes(n2));a.ref=n2;a.fakeRef=true;}
+      if(t==="freelance"){a.job="Freelance writer";a.employer="Self-employed";a.quote=NOTES_Q;}
+      if(t==="capitol"){a.pay="Wire, Capitol Savings & Loan";a.job="Consultant";a.employer="Brightline Advisory";}
+      if(t==="dob")a.born=yr-age+pick([-1,1])*Math.round(rand(6,14));
+      if(t==="sig")a.idSig=`${pick(FIRST.filter(f=>f[0]!==first[0]))[0]}. ${last}`;
+    }
+  }else{
+    // Real people want one thing: safety, status or a big score. Their job hints at it; their words sometimes mislead.
+    a.pref=JOB_PREF[a.job]?wpick(JOB_PREF[a.job]):pick(PREFS);
+    const r=Math.random();
+    a.quote=r<0.5?pick(QBY[a.pref]):r<0.8?pick(NEUTRAL_Q):pick(QBY[pick(PREFS.filter(p=>p!==a.pref))]);
+    if(a.pref==="status")a.dep=Math.round(a.dep*(1+image(s)*0.04)/1e3)*1e3;
+    // Not every crook is a cop. Some just write bad checks.
+    if(s.week>=3&&Math.random()<0.06){a.bounce=true;a.pay="Personal check, Ashford Federal Savings";}
+  }
+  return a;
+}
+const WHALE_JOBS=[["Shipping heir","Halvorsen Lines"],["Retired hedge fund manager","Self-employed"],["Oil family trustee","Delacroix Family Trust"],
+  ["Tech founder","Recently sold a startup"],["Real estate developer","Gallo Towers"],["Cardiac surgeon","Owns three clinics"]];
+// The typical check at your current rank, drawn exactly the way regular applicants are.
+function avgDeposit(s){let t=0;for(let i=0;i<1000;i++)t+=Math.max(5e3*(1+0.04*s.week)*rand(3,10),s.owed*rand(0.003,0.012));return t/1000*(1+RANKS[s.rank].dep);}
+// A whale is always at least five times the typical check.
+function makeWhale(s){
+  const a=makeApplicant(s), j=pick(WHALE_JOBS);
+  a.whale=true;a.job=j[0];a.employer=j[1];a.bounce=false;
+  if(a.pay.includes("Ashford Federal"))a.pay=`Wire, ${pick(BANKS)}`;
+  a.dep=Math.ceil(avgDeposit(s)*rand(5.2,8)/1e4)*1e4;
+  if(!a.plant){a.pref=pick(PREFS);a.quote=Math.random()<0.6?pick(QBY[a.pref]):pick(NEUTRAL_Q);}
+  return a;
+}
+function makeWithdrawal(s){
+  const job=pick(JOBS);
+  return {kind:"wd",name:s.named.length&&Math.random()<0.5?pick(s.named):newName(),job:job[0],
+    amt:Math.round(Math.max(10e3,s.owed*rand(0.005,0.02))/1e3)*1e3,quote:pick(WD_Q),vis:pick(VIS_TAGS),hid:pick(HID_TAGS),checks:{}};
+}
+function makeForm(s){
+  const AUM=["Assets under management",[["c",fmt(s.reportedAUM)],["t",fmt(Math.max(0,s.cash))],["o",fmt(s.reportedAUM*rand(1.2,1.5))]]];
+  const RET=["Return since launch",[["c",`${s.claimed.toFixed(0)}%`],["t","0%"],["o",`${Math.round(s.claimed*rand(1.2,1.5)+3)}%`]]];
+  const AUD=["Auditor of record",[["c",s.story.auditor],["t","None"],["o",decoy(s,"auditor")]]];
+  const BANK=["Custodian bank",[["c",s.story.bank],["t","Self-custodied"],["o",decoy(s,"bank")]]];
+  const STRAT=["Investment strategy",[["c",s.story.strategy],["t","New deposits pay old investors"],["o",decoy(s,"strategy")]]];
+  const WIRE=["Purpose of outgoing wires",[["c",s.story.wires],["t","Transfers to my offshore account"],["o",decoy(s,"wires")]]];
+  const POS=["Largest position",[["c",s.story.position],["t","None. There are no trades."],["o",decoy(s,"position")]]];
+  const T=pick([
+    {from:"State Securities Division",title:"Form ADV annual update",fields:[AUM,BANK,STRAT,POS]},
+    {from:"Grant & Lyle LLP, for a large investor",title:"Audit confirmation request",fields:[AUM,AUD,RET,POS]},
+    {from:"First Ashford Trust, compliance desk",title:"Wire activity review",fields:[WIRE,AUM,BANK]},
+    {from:"A wealthy investor's family office",title:"Annual performance letter",fields:[RET,STRAT,AUD,POS]},
+  ]);
+  // A surprise audit: the auditor sits across from you, so your notes stay in the drawer.
+  const surprise=s.week>=5&&Math.random()<0.3+s.heat/300;
+  return {kind:"form",surprise,from:surprise?"An auditor, sitting across your desk":T.from,title:surprise?`Surprise audit: ${T.title.toLowerCase()}`:T.title,
+    fields:T.fields.map(([l,o])=>({l,o:shuffle(o.map(x=>x.slice())),pick:null}))};
+}
+
+function startDesk(){
+  const s=S, q=[];
+  const buff=s.buff&&s.buff.week===s.week?s.buff.k:null;
+  // Trust, the sports car out front and a fired-up bullpen all bring more people through the door.
+  const nApps=clamp(2+Math.floor(s.mkt*0.8)+(Math.random()<0.5?1:0)+(s.trust>=70?1:s.trust<35?-1:0)+(s.life.car?1:0)+(buff==="dial"?2:0)+RANKS[s.rank].apps,1,10);
+  for(let i=0;i<nApps;i++)q.push(makeApplicant(s));
+  // The penthouse draws whales.
+  // A Kingpin gets a whale every day; the penthouse draws one now and then. Whales walk in announced.
+  if(RANKS[s.rank].whale||(s.life.penthouse&&Math.random()<0.35))q.push(makeWhale(s));
+  if(s.investors>20)for(let i=Math.random()<0.5?1:2;i>0;i--)q.push(makeWithdrawal(s));
+  if(s.week>=3){if(Math.random()<0.25+s.heat/200)q.push(makeForm(s));if(s.heat>60&&Math.random()<0.5)q.push(makeForm(s));}
+  // When things get hot, the tray floods: panicked investors and more paperwork than one day can hold.
+  const flood=s.heat>=55?1+Math.floor((s.heat-55)/15):0;
+  for(let i=0;i<flood;i++){if(s.investors>20){const w=makeWithdrawal(s);w.amt=Math.round(w.amt*rand(1.5,2.5)/1e3)*1e3;w.quote=pick(PANIC_Q);q.push(w);}if(s.week>=3&&Math.random()<0.6)q.push(makeForm(s));}
+  // The whale you stayed for.
+  if(s.whaleNext){const a=makeApplicant(s);Object.assign(a,{plant:false,type:null,idName:a.name,fakeRef:false,pref:"greed",pitched:true,hooked:true,
+    dep:s.whaleNext.dep,quote:"As promised. Let's do this before anyone changes their mind.",resp:"Wire's ready. Where do I sign?",pitchName:"One last deal"});
+    q.push(a);s.whaleNext=null;}
+  s.desk={time:DAY,q:shuffle(q),i:0,log:[],freeBg:has(s,"source")?1:0,done:false,flood,buff};
+  // Don't make the whale wait until the end of the day.
+  const wi=s.desk.q.findIndex(c=>c.whale);if(wi>1){const [w]=s.desk.q.splice(wi,1);s.desk.q.splice(Math.random()<0.5?0:1,0,w);}
+  renderDesk();
+  if(flood>=2)modal(`<h3>Your phone hasn't stopped ringing</h3><p>Investors are calling, the mail is piled up, and there's a line in the lobby. You won't get to all of it today.</p>
+    <div class="btns"><button class="big go" data-act="close">Start with the pile</button></div>`);
+  if(s.week===1)modal(`<h3>Your desk</h3><p>Big investors come to you in person. Most are real. Some are plants: agents, reporters or regulators collecting evidence.</p>
+    <p>Your black book lists the tells you know. Every check costs time, and the office closes at 5.</p>
+    <div class="btns"><button class="big go" data-act="close">Open the door</button></div>`);
+}
+
+function renderDesk(){
+  const s=S, d=s.desk;
+  if(d.i>=d.q.length||d.time<BASE){deskSummary();return;}
+  const p=cardParts(d.q[d.i],s,d);
+  setChill(s);
+  // The phone rings more as the walls close in.
+  if(d.rung!==d.i){d.rung=d.i;if(d.q[d.i].whale)play("coins");else if(d.i>0&&Math.random()<s.heat/150)play("ring");}
+  $("app").innerHTML=`<header class="deskhead"><div><div class="clock ${d.time<90?"late":""}">${clock(d.time)}</div>
+      <div class="k">Today: ${gameDate(s.week).toLocaleDateString("en-US",{month:"long",year:"numeric"})}</div></div>
+    <div class="tray">${d.q.length-d.i} in tray<br>${d.q.slice(d.i).some(c=>c.whale)?`<b class="whalenote">Whale in the lobby</b>`:"Closes 5:00 pm"}</div>
+    <div class="tools"><button class="chip" data-act="book" ${d.q[d.i].surprise?"disabled":""}>Black book</button><button class="chip" data-act="story" ${d.q[d.i].surprise?"disabled":""}>Cover story</button></div></header>
+    <div class="docwrap">${p.doc}</div>${p.acts}${p.dec}`;
+}
+
+// Each card has three parts: the paper, the checks you can run, and the decision.
+function cardParts(c,s,d){
+  const t=d.time, dis=cost=>t<cost+BASE?"disabled":"";
+  if(c.kind==="app"){
+    const free=d.freeBg>0;
+    return {doc:`<div class="doc ${c.whale?"whaledoc":""}"><div class="doctype">New investor application${c.whale?`<span class="whale">WHALE</span>`:""}</div>
+      <div class="kv"><span>Name</span><b>${c.name}</b><span>Age</span><b>${c.age}</b><span>Occupation</span><b>${c.job}, ${c.employer}</b>
+      <span>Address</span><b>${c.address}</b><span>Deposit</span><b>${fmt(c.dep)}</b><span>Payment</span><b>${c.pay}</b>
+      <span>Referred by</span><b>${c.ref||"Heard about you from "+c.channel}</b><span>Signed</span><b class="sig">${c.sig}</b></div>
+      <p class="quote">"${c.quote}"</p>
+      <div class="idcard"><div class="idh">State of Ashford · ID card</div><b>${c.idName.toUpperCase()}</b><span>Born ${c.born}</span><span>Exp. ${c.exp}</span><span class="sig">${c.idSig}</span></div>
+      ${c.checks.ref?`<div class="found"><b>Referral:</b> ${c.checks.ref}</div>`:""}
+      ${c.checks.bg?`<div class="found"><b>Background:</b> ${c.checks.bg}</div>`:""}
+      ${c.checks.talk?`<div class="found"><b>Small talk:</b> ${c.checks.talk}</div>`:""}
+      ${c.resp?`<div class="found"><b>You pitched "${c.pitchName}":</b> "${c.resp}"</div>`:""}</div>`,
+      acts:`<div class="deskacts"><button class="mini" data-act="dchk" data-v="ref" ${c.checks.ref?"disabled":dis(T_REF)}>Referral · 30m</button>
+        <button class="mini" data-act="dchk" data-v="bg" ${c.checks.bg?"disabled":free?"":dis(T_BG)}>Background · ${free?"free":"1h"}</button>
+        <button class="mini" data-act="dchk" data-v="talk" ${c.checks.talk||c.pitched?"disabled":dis(T_TALK)}>Small talk · 15m</button></div>`,
+      dec:`<div class="deskdec"><button class="big run" data-act="ddec" data-v="reject">Turn away</button>${c.pitched
+        ?`<button class="big go" data-act="ddec" data-v="accept">Close · ${fmt(c.dep)}</button>`
+        :`<button class="big go" data-act="pitch" ${dis(BASE)}>Pitch · ${fmt(c.dep)}</button>`}</div>`};
+  }
+  if(c.kind==="wd"){
+    return {doc:`<div class="doc"><div class="doctype">Withdrawal request</div>
+      <div class="kv"><span>Investor</span><b>${c.name}</b><span>Occupation</span><b>${c.job}</b><span>Amount</span><b>${fmt(c.amt)}</b><span>What you know</span><b>${c.vis.l}</b></div>
+      <p class="quote">"${c.quote}"</p>
+      ${c.checks.ask?`<div class="found"><b>Word around town:</b> ${c.checks.ask}</div>`:""}</div>`,
+      acts:`<div class="deskacts"><button class="mini" data-act="dchk" data-v="ask" ${c.checks.ask?"disabled":dis(T_ASK)}>Ask around · 20m</button></div>`,
+      dec:`<div class="deskdec"><button class="big run" data-act="ddec" data-v="stall">Stall</button>
+        <button class="big alt" data-act="ddec" data-v="half" ${s.cash<c.amt/2?"disabled":""}>Pay half</button>
+        <button class="big go" data-act="ddec" data-v="pay" ${s.cash<c.amt?"disabled":""}>Pay ${fmt(c.amt)}</button></div>`};
+  }
+  const ready=c.fields.every(f=>f.pick!=null), ft=formTime(s);
+  return {doc:`<div class="doc"><div class="doctype">${c.title}<span>${c.from}</span></div>
+    ${c.surprise?`<div class="found"><b>No notes allowed.</b> The auditor is watching. Your black book and cover story stay in the drawer.</div>`:""}
+    ${c.fields.map((f,fi)=>`<div class="fld"><span>${f.l}</span>${f.o.map((o,oi)=>`<button class="fopt ${f.pick===oi?"on":""}" data-act="dopt" data-v="${fi}:${oi}">${o[1]}</button>`).join("")}</div>`).join("")}</div>`,
+    acts:"",
+    dec:`<div class="deskdec"><button class="big run" data-act="ddec" data-v="ignore">Leave it</button>
+      <button class="big go" data-act="ddec" data-v="file" ${ready&&t>=ft?"":"disabled"}>File it · ${ft} min</button></div>`};
+}
+
+function deskCheck(v){
+  const s=S, d=s.desk, c=d.q[d.i];
+  if(c.checks[v])return;
+  if(v==="ref"){if(d.time<T_REF+BASE)return;d.time-=T_REF;
+    c.checks.ref=c.fakeRef?`Nobody named ${c.ref} has an account with you.`
+      :c.ref?(c.plant&&Math.random()<0.5?`${c.ref}: "Never met them. Maybe at the gym?"`:`${c.ref}: "${pick(["Yeah, I told them about you. Good people.","Sure, we play golf together.","That's my neighbor. Take their money!"])}"`)
+      :`Their name is on the list from ${c.channel}.`;}
+  if(v==="bg"){const free=d.freeBg>0;if(!free&&d.time<T_BG+BASE)return;if(free)d.freeBg--;else d.time-=T_BG;
+    c.checks.bg=c.plant?BG[c.type]:`${c.job}, ${c.employer}. Credit is solid. No red flags.`;}
+  if(v==="ask"){if(d.time<T_ASK+BASE)return;d.time-=T_ASK;c.checks.ask=c.hid?c.hid.l:"Nothing else worth knowing.";}
+  if(v==="talk"){if(d.time<T_TALK+BASE)return;d.time-=T_TALK;
+    const p=c.pref&&!(c.plant&&c.eager)&&Math.random()<0.85?c.pref:pick(PREFS);c.checks.talk=pick(SMALLTALK[p]);}
+  renderDesk();
+}
+
+function stallHit(s,c,k){for(const t of [c.vis,c.hid])if(t){s.heat+=t.h*k;s.trust+=t.t*k;}}
+function deskDecide(v){
+  const s=S, d=s.desk, c=d.q[d.i];
+  if(c.kind==="app"){
+    d.time-=BASE;
+    if(v==="accept"){
+      if(!c.bounce)s.cash+=c.dep;
+      else s.revealNext.push(`${c.name}'s check bounced. Ashford Federal Savings closed last spring. On paper, you still owe them ${fmt(c.dep)}.`);
+      s.owed+=c.dep;s.investors++;d.take=(d.take||0)+c.dep;d.signed=(d.signed||0)+1;d.log.push(`Signed ${c.name} for ${fmt(c.dep)}.`);
+      if(c.plant){s.heat+={agent:18,reporter:12,regulator:15}[c.type];s.plantsAccepted++;s.revealNext.push(REVEAL[c.type](c.name));}
+      else{s.named.push(c.name);if(!s.biggest||c.dep>s.biggest.dep)s.biggest={name:c.name,dep:c.dep,job:c.job};}
+      // The rush. Plants get the same celebration; you don't know yet.
+      play("stamp");setTimeout(()=>play("kaching"),160);stampFx("SIGNED","+"+fmt(c.dep));burst(c.hooked?18:9);
+      if(c.dep>=Math.max(80e3,s.owed*0.02))shake();
+    }else{
+      play("walk");
+      d.log.push(`Turned away ${c.name}.`);
+      if(c.plant){if(Math.random()<0.5)s.revealNext.push(DODGE[c.type](c.name));}
+      else{s.trust-=1;s.honestRejected++;if(Math.random()<0.3)s.revealNext.push(`${c.name}, whom you turned away, put ${fmt(c.dep)} in a savings account instead. Lucky them.`);}
+    }
+  }else if(c.kind==="wd"){
+    if(v==="pay"){if(s.cash<c.amt)return;s.cash-=c.amt;s.owed-=c.amt;s.trust+=2;d.log.push(`Paid ${c.name} ${fmt(c.amt)}.`);}
+    else if(v==="half"){const h=Math.round(c.amt/2);if(s.cash<h)return;s.cash-=h;s.owed-=h;stallHit(s,c,0.5);d.log.push(`Paid ${c.name} half. They want the rest.`);}
+    else{stallHit(s,c,1);d.log.push(`Stalled ${c.name}. "The check is in the mail."`);}
+    d.time-=BASE;
+  }else{
+    if(v==="file"){
+      if(c.fields.some(f=>f.pick==null)||d.time<formTime(s))return;
+      d.time-=formTime(s);let errs=0;
+      for(const f of c.fields){const k=f.o[f.pick][0];
+        if(k==="t"){s.heat+=12;errs++;d.log.push(`${c.title}: you told the truth about "${f.l.toLowerCase()}." That's a confession.`);}
+        else if(k==="o"){s.heat+=7;errs++;d.log.push(`${c.title}: "${f.l.toLowerCase()}" doesn't match what you've told everyone else.`);}}
+      if(!errs){s.heat-=2;d.log.push(`${c.title}: filed. Your story holds.`);}
+    }else{d.time-=BASE;s.heat+=6;d.log.push(`You ignored the ${c.title.toLowerCase()}. ${c.from} will follow up.`);}
+  }
+  s.heat=clamp(s.heat,0,100);s.trust=clamp(s.trust,0,100);
+  d.i++;renderDesk();
+}
+
+function deskSummary(){
+  const s=S, d=s.desk;
+  if(!d.done){
+    for(const c of d.q.slice(d.i)){
+      if(c.kind==="app")d.log.push(`${c.name} gave up waiting and left.`);
+      else if(c.kind==="wd"){stallHit(s,c,1);d.log.push(`${c.name} never heard back about their ${fmt(c.amt)}.`);}
+      else{s.heat+=6;d.log.push(`The ${c.title.toLowerCase()} sat in your tray all day.`);}
+    }
+    s.heat=clamp(s.heat,0,100);s.trust=clamp(s.trust,0,100);
+    d.i=d.q.length;d.done=true;
+  }
+  $("app").innerHTML=`<header class="deskhead"><div><div class="clock">${d.time<BASE?"5:00 pm":clock(d.time)}</div><div class="k">Month ${s.week}</div></div><div class="tray">Tray empty</div></header>
+    <div class="takebox"><div class="mh">Today's take</div><div class="take" id="take">${d.counted?fmt(d.take||0):"$0"}</div><div class="hint">${num(d.signed||0)} signed today</div></div>
+    <div class="daylog"><div class="mh">How the day went</div>${d.log.map(l=>`<div class="news">${l}</div>`).join("")||`<div class="news">A quiet day.</div>`}</div>
+    ${s.rank>=1?`<button class="big go wide" data-act="bullpen">Go to the bullpen →</button>`:`<button class="big go wide" data-act="dclose">Close the office →</button>`}`;
+  if(!d.counted){d.counted=true;const take=d.take||0;
+    if(take>0){countUp($("take"),0,take,fmt,1400);
+      for(let i=0;i<10;i++)setTimeout(()=>play("tick"),i*130);
+      setTimeout(()=>{play("kaching");burst(take>=Math.max(150e3,s.owed*0.05)?24:12);},1400);}}
+}
+function showBook(){
+  if(S.desk&&!S.desk.done&&S.desk.q[S.desk.i]&&S.desk.q[S.desk.i].surprise)return;
+  modal(`<h3>Black book</h3><p class="hint">Tells you know so far. A background check always tells the truth, but it takes an hour.</p>
+    ${rulesKnown(S).map(r=>`<p class="rule">${r.t}</p>`).join("")}
+    <div class="btns"><button class="big alt" data-act="close">Back to the desk</button></div>`);
+}
+function showStory(){
+  if(S.desk&&!S.desk.done&&S.desk.q[S.desk.i]&&S.desk.q[S.desk.i].surprise)return;
+  const s=S;
+  modal(`<h3>Cover story</h3><p class="hint">What you've told the world. Every document you file has to match this. The truth is a confession.</p>
+    <div class="cover"><div><span>Fund size, last report</span><b>${fmt(s.reportedAUM)}</b></div>
+    <div><span>Return since launch</span><b>${s.claimed.toFixed(0)}%</b></div>
+    <div><span>Auditor</span><b>${s.story.auditor}</b></div>
+    <div><span>Custodian bank</span><b>${s.story.bank}</b></div>
+    <div><span>Strategy</span><b>${s.story.strategy}</b></div>
+    <div><span>Outgoing wires are</span><b>${s.story.wires}</b></div>
+    <div><span>Largest position</span><b>${s.story.position}</b></div></div>
+    <div class="btns"><button class="big alt" data-act="close">Back to the desk</button></div>`);
+}
+
+// ---------- Feel: the rush, the dread, the run ----------
+// Rank takes money and image. You can't be the Wolf from a strip mall in a used sedan.
+// Each rank brings real perks, and real attention.
+const RANKS=[
+  {t:"Hustler",min:0,img:0,office:"Strip-mall office",dep:0,apps:0,heat:0,
+    gain:["Just you, a phone and a dream."],cost:[]},
+  {t:"Closer",min:3e5,img:0,office:"Downtown suite",dep:0,apps:1,heat:0.3,
+    gain:["A bullpen: rally your team after every workday.","One more person at your desk every day."],cost:["People around town start to notice you."]},
+  {t:"Shark",min:2e6,img:1,office:"Glass tower, 20th floor",dep:0.2,apps:1,heat:0.6,
+    gain:["Every check is 20% bigger. People pay more to be with a winner."],cost:["More eyes on you every month."]},
+  {t:"Kingpin",min:1.2e7,img:4,office:"The whole tower",dep:0.2,apps:1,heat:1,whale:true,
+    gain:["A whale walks into your office every day."],cost:["Regulators know your name now."]},
+  {t:"Wolf",min:6e7,img:8,office:"Penthouse headquarters",dep:0.4,apps:2,heat:1.5,whale:true,
+    gain:["Every check is 40% bigger.","Two more people at your desk every day."],cost:["Everyone is watching. Everyone."]},
+];
+// Everything your rank does for you, and to you, so far.
+function rankPerks(r){const g=[],c=[];for(let i=1;i<=r;i++){g.push(...RANKS[i].gain);c.push(...RANKS[i].cost);}return {g,c};}
+function perkList(r,onlyNew){
+  const g=onlyNew?RANKS[r].gain:rankPerks(r).g, c=onlyNew?RANKS[r].cost:rankPerks(r).c;
+  return `<div class="perks">${g.map(x=>`<p class="good">+ ${x}</p>`).join("")}${c.map(x=>`<p class="bad">− ${x}</p>`).join("")}</div>`;
+}
+function showRankInfo(){
+  const s=S, R=RANKS[s.rank], nx=RANKS[s.rank+1];
+  modal(`<div class="tag">Your status</div><div class="rk">${R.t.toUpperCase()}</div><p class="hint">${R.office}</p>
+    ${s.rank?perkList(s.rank):`<p>${R.gain[0]}</p>`}
+    ${nx?`<p class="hint">Next: <b>${nx.t}</b>. It takes ${fmt(nx.min)} under management${nx.img?` and an image of ${nx.img} (yours is ${image(s)})`:""}.</p>${perkList(s.rank+1,true)}`:`<p class="hint">There's nothing above this. Only down.</p>`}
+    <div class="btns"><button class="big alt" data-act="close">Back</button></div>`,"gold");
+}
+const image=s=>LIFE.reduce((t,x)=>t+(!x.repeat&&s.life&&s.life[x.id]?x.img:0),0);
+const rankOf=s=>{let r=0;RANKS.forEach((x,i)=>{if(i===r+1&&s.peakOwed>=x.min&&image(s)>=x.img)r=i;});return Math.max(r,s.rank||0);};
+const RANK_LINES=["Look at you. Look at this office.","You were born for this.","Nobody has ever done it like you.","Somebody pinch you. Actually, don't."];
+const PUFF=[
+  [`${CITY}'s golden child`,`How ${FUND}'s founder keeps beating the market.`],
+  ["Business Monthly cover: \"The Closer\"","\"I just believe in people,\" the founder says."],
+  [`${FUND} named Fund of the Year`,"The Ashford Business Journal calls its returns \"remarkable.\""],
+  [`${FUND} gala raises record sum for children's hospital`,"The founder's toast drew a standing ovation."],
+  ["Local fund founder buys a round for the whole bar","Witnesses describe \"a legend.\""],
+];
+
+// The narrator's confidence tracks the hidden heat, with the occasional lie to yourself.
+const NARR=[
+  ["You're a genius. Say it out loud.","Money never sleeps. Neither do you.","Easiest money you've ever made.","They can't teach what you've got."],
+  ["A few people are talking. People always talk.","Haters mean you're winning.","Some blogger called you too good to be true. Frame it.","You bought a second phone. Just for convenience."],
+  ["A reporter called the front desk. Probably wants a profile.","Third time that gray car has driven past. Probably nothing.","You've started checking the mirror. Just habit.","Your accountant laughed too hard at your joke."],
+  ["Your banker stopped making eye contact.","Keep smiling. Smiling is free.","You haven't slept more than four hours since Tuesday.","Somebody went through your trash. Raccoons, probably."],
+  ["The van outside has been there since Tuesday.","Your phone clicks when you pick it up. It's fine.","Breathe. It's fine. It's fine.","You flinch every time the elevator dings."],
+  ["Pack a bag. Just in case.","Every knock on the door stops your heart.","You keep looking at flight times. Just looking.","You can hear your own pulse in the quiet."],
+];
+function narrate(s){
+  let t=tierOf(s.heat);
+  if(t>=3&&Math.random()<0.15)t-=2;
+  if(t===0&&s.stash>0&&Math.random()<0.3)return `${fmt(s.stash)} offshore and counting.`;
+  return pick(NARR[t]);
+}
+
+// The pitch. Real people want safety, status or a big score. Most plants say yes to anything.
+const QBY={
+  safety:["I just want something steady for retirement.","I can't afford to lose this.","Is it true you've never had a down month?"],
+  status:["My financial adviser is going to be so jealous.","I hear the mayor's in. Is that true?","My brother-in-law can't stop talking about you."],
+  greed:["How soon can I add more?","What's the most anyone's made with you?","I want in before everyone else finds out."],
+};
+const PITCHES=[
+  {k:"safety",n:"Safe",line:"Your money's safe with me. Steady returns, every single month."},
+  {k:"status",n:"Exclusive",line:"This fund is invite only. Most people never get a seat at this table."},
+  {k:"greed",n:"Greed",line:"My clients doubled their money last year. Imagine next year."},
+];
+const HOOKED=["I'm in. Where do I sign?","That's exactly what I needed to hear.","Say no more. Let's do this."];
+const LUKEWARM=["Hm. Okay. I'll start smaller and see.","I'll put in a little and see how it goes."];
+const EAGER=["Sounds great. Sign me up.","Perfect. Could you put that in writing for me?","Wonderful. That's exactly what I wanted to hear."];
+function showPitch(){
+  const c=S.desk.q[S.desk.i];
+  modal(`<h3>Pitch ${c.name.split(" ")[0]}</h3><p class="hint">Read them first. Do they want safety, status or a big score?</p>
+    <div class="opts">${PITCHES.map((p,i)=>`<button class="opt" data-act="dopitch" data-v="${i}"><span class="nm"><b>${p.n}</b><small>“${p.line}”</small></span></button>`).join("")}</div>
+    <div class="btns"><button class="big alt" data-act="close">Back</button></div>`);
+}
+function doPitch(i){
+  const s=S, d=s.desk, c=d.q[d.i], p=PITCHES[i];
+  closeModal();
+  if(d.time<BASE)return;
+  d.time-=BASE;c.pitched=true;c.pitchName=p.n;
+  if(c.plant&&c.eager){c.resp=pick(EAGER);hook(c,p.k);}
+  else if(c.pref===p.k){c.dep=Math.round(c.dep*rand(1.3,1.6)/1e3)*1e3;c.resp=pick(HOOKED);hook(c,p.k);play("coins");}
+  else{
+    // A bad read usually loses them. The gold watch keeps status-seekers in the chair; a fired-up bullpen softens the blow.
+    let walk=d.buff==="close"?0.33:0.65;if(p.k==="status"&&s.life.watch)walk=0;
+    if(Math.random()<walk){d.log.push(`${c.name} walked out: "This feels like a sales pitch."`);play("walk");stampFx("WALKED","",true);d.i++;}
+    else{c.dep=Math.round(c.dep*0.8/1e3)*1e3;c.resp=pick(LUKEWARM);}
+  }
+  renderDesk();
+  if(c.hooked&&d.q[d.i]===c)showRisk();
+}
+
+// Push your luck. Once they bite, their own words hint at what really moves them.
+const RISK={
+  safety:{x:1.5,o:[{k:"family",l:"Your family will be taken care of. Forever."},{k:"proof",l:"I'll guarantee it in writing. Signed today."},{k:"authority",l:"Even the bank's own managers invest with us."}]},
+  status:{x:2,o:[{k:"names",l:"The mayor's in. Keep that between us."},{k:"scarcity",l:"There are two seats left this year. One is yours."},{k:"ego",l:"I want you on our advisory board."}]},
+  greed:{x:3,o:[{k:"urgency",l:"Double it. Now. The window closes Friday."},{k:"allin",l:"Put the house in. You'll buy two more."},{k:"secret",l:"There's a side fund. Insiders only. Triple returns."}]},
+};
+const HOT_HINT={family:"My kids are my whole world, you know.",proof:"Is there something I can sign?",authority:"Who else banks with you?",
+  names:"Anyone I'd know invest with you?",scarcity:"I'd hate to miss out on something like this.",ego:"People in this town know my name, you know.",
+  urgency:"How fast can this happen?",allin:"Honestly, I'd put in everything if this is real.",secret:"Is there anything that's not in the brochure?"};
+const RISK_YES=["Okay. Okay! Let's do it.","You know what? Make it bigger.","I've never done anything like this. I love it."];
+function hook(c,cat){
+  c.hooked=true;c.cat=cat;c.hot=pick(RISK[cat].o).k;
+  // The hint points at the real hot button four times out of five.
+  c.hint=HOT_HINT[Math.random()<0.8?c.hot:pick(RISK[cat].o.filter(o=>o.k!==c.hot)).k];
+}
+function showRisk(){
+  const c=S.desk.q[S.desk.i], R=RISK[c.cat];
+  modal(`<div class="tag">They're hooked</div><h3>Push your luck?</h3>
+    <p>${c.name.split(" ")[0]} leans in: <i>“${c.hint}”</i></p>
+    <p class="hint">Say the right thing and the check becomes <b class="good">${fmt(c.dep*R.x)}</b> (×${R.x}). Say the wrong thing and they walk out.</p>
+    <div class="opts">${R.o.map((o,i)=>`<button class="opt" data-act="risk" data-v="${i}"><span class="nm"><small>“${o.l}”</small></span><span class="c">×${R.x}</span></button>`).join("")}</div>
+    <div class="btns"><button class="big alt" data-act="riskskip">Don't push it · ${fmt(c.dep)}</button></div>`);
+}
+function doRisk(i){
+  const s=S, d=s.desk, c=d.q[d.i], R=RISK[c.cat], o=R.o[i];
+  closeModal();
+  if((c.plant&&c.eager)||o.k===c.hot){
+    c.dep=Math.round(c.dep*R.x/1e3)*1e3;c.resp=pick(RISK_YES);c.pitchName=`${c.pitchName}, then went for more`;
+    play("coins");setTimeout(()=>play("kaching"),200);burst(16);
+  }else{
+    d.log.push(`${c.name} got spooked and walked out: "Whoa. That's... no. I need to think."`);play("walk");stampFx("SPOOKED","",true);d.i++;
+  }
+  renderDesk();
+}
+
+// The speech to the bullpen. Each one changes tomorrow.
+const SPEECH=[
+  {k:"dial",l:"Pick up the phone and start dialing!",fx:"Next month: two more people at your desk."},
+  {k:"close",l:"Nobody leaves this office until they close!",fx:"Next month: fewer walk-outs on a bad pitch. Your crew is exhausted."},
+  {k:"stay",l:"I'm not leaving! I'm not leaving!",fx:"Your crew would follow you anywhere. Word gets around town."},
+];
+function doSpeech(i){
+  const s=S, d=s.desk;if(d.speech)return;
+  const sp=SPEECH[i];d.speech=sp;
+  if(sp.k==="stay"){for(const l of s.lts)l.loyalty=clamp(l.loyalty+15,0,100);s.trust=clamp(s.trust+2,0,100);s.heat=clamp(s.heat+2,0,100);}
+  else{s.buff={k:sp.k,week:s.week+1};if(sp.k==="close")for(const l of s.lts)l.loyalty=clamp(l.loyalty-5,0,100);}
+  s.revealNext.push(`The bullpen is fired up. ${sp.fx}`);
+  if(sp.k==="dial"){play("ring");setTimeout(()=>play("ring"),350);setTimeout(()=>play("ring"),700);}
+  else if(sp.k==="close"){play("thump");setTimeout(()=>play("tick"),500);setTimeout(()=>play("tick"),1000);}
+  else{play("roar");shake();}
+  renderBullpen();
+}
+
+// The bullpen, seen from where you stand: a faceless crowd that does whatever you tell it to.
+const PEN_POS=[[102,118,.72],[141,114,.72],[180,118,.72],[219,114,.72],[258,118,.72],[118,180,1],[180,184,1],[242,180,1]];
+function penPerson(x,y,k,i,mode){
+  const head=mode==="late"?-38:-44;
+  let extra="";
+  if(mode==="dial")extra=`<path d="M12 -24 Q24 -36 13 -47" stroke="#05080a" stroke-width="7" fill="none" stroke-linecap="round"/><rect x="8" y="-55" width="9" height="13" rx="2" fill="#05080a"/><path class="ringl" d="M21 -58 q5 -5 10 0 M23 -64 q7 -7 14 0" stroke="#e9c46a" stroke-width="1.6" fill="none"/>`;
+  if(mode==="riled")extra=`<path d="M-15 -24 L-27 -66" stroke="#05080a" stroke-width="7" stroke-linecap="round"/><path d="M15 -24 L27 -66" stroke="#05080a" stroke-width="7" stroke-linecap="round"/><circle cx="-28" cy="-69" r="5" fill="#05080a"/><circle cx="28" cy="-69" r="5" fill="#05080a"/>`;
+  if(mode==="late")extra=`<path class="sq" d="M-12 ${head-20} l4 -5 l4 5 l4 -5 l4 5 l4 -5 l4 5" stroke="#ff6b5b" stroke-width="1.6" fill="none"/>`;
+  const body=`<path d="M-21 0 Q-21 -31 0 -33 Q21 -31 21 0 Z" fill="#05080a"/><circle cx="0" cy="${head}" r="11" fill="#05080a"/>`;
+  const desk=mode==="late"?`<rect x="-32" y="-16" width="64" height="18" fill="#140e07"/><rect x="-14" y="-30" width="28" height="15" fill="#0d1a24"/><rect x="-12" y="-28" width="24" height="11" fill="#5fb0d4" opacity=".35"/>`:"";
+  return `<g transform="translate(${x} ${y}) scale(${k})"><g class="pp pp-${mode}" style="animation-delay:${(i*0.09).toFixed(2)}s">${body}${extra}</g>${desk}</g>`;
+}
+function bullpenSVG(mode){
+  const late=mode==="late";
+  let g=`<rect width="360" height="210" fill="${late?"#0d141c":"#2a3328"}"/>`
+    +`<rect x="20" y="16" width="100" height="58" fill="${late?"#050a12":"#8fb3c4"}" opacity="${late?1:.55}"/><rect x="240" y="16" width="100" height="58" fill="${late?"#050a12":"#8fb3c4"}" opacity="${late?1:.55}"/>`
+    +(late?`<circle cx="300" cy="34" r="7" fill="#e8e4cf" opacity=".8"/>`:"")
+    +`<rect x="140" y="24" width="80" height="34" fill="#1d2a23"/><text x="180" y="45" text-anchor="middle" font-family="Archivo Black,Impact,sans-serif" font-size="9" fill="#e9c46a">${FUND.toUpperCase()}</text>`
+    +`<rect x="0" y="150" width="360" height="60" fill="${late?"#0a0f14":"#1c231c"}"/>`
+    +(mode==="riled"?`<rect class="flashlite" width="360" height="210" fill="#e9c46a" opacity="0"/>`:"");
+  PEN_POS.forEach(([x,y,k],i)=>g+=penPerson(x,y,k,i,mode));
+  if(late)g+=`<rect width="360" height="210" fill="url(#lamp)" opacity=".5"/>`;
+  return `<svg viewBox="0 0 360 210" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><radialGradient id="lamp" cx=".5" cy=".85" r=".6"><stop offset="0" stop-color="#e9c46a" stop-opacity=".25"/><stop offset="1" stop-color="#000" stop-opacity=".6"/></radialGradient></defs>${g}</svg>`;
+}
+const PEN_REACT={dial:"They scramble for their phones. The room fills with the sound of dialing.",
+  close:"Nobody goes home. The lights stay on until two in the morning.",
+  stay:"The room explodes. Someone climbs on a desk. Someone cries."};
+function renderBullpen(){
+  const s=S, d=s.desk, sp=d.speech;
+  $("app").innerHTML=`<header class="deskhead"><div><div class="clock">The bullpen</div><div class="k">Month ${s.week} · after hours</div></div>
+      <div class="tray">${num(d.signed||0)} signed today<br>${fmt(d.take||0)} in</div></header>
+    <div class="pen">${bullpenSVG(sp?sp.k==="stay"?"riled":sp.k==="close"?"late":"dial":"idle")}</div>
+    ${sp?`<p class="narr">“${sp.l}” ${PEN_REACT[sp.k]}</p><p class="good fx">${sp.fx}</p><button class="big go wide" data-act="dclose">Go home →</button>`
+      :`<p class="narr">They're all looking at you. Say something.</p>
+        <div class="speech">${SPEECH.map((x,i)=>`<button data-act="speech" data-v="${i}">“${x.l}”<small>${x.fx}</small></button>`).join("")}</div>`}`;
+}
+
+// The good life, paid from your stash.
+// Every toy does a job: it lifts your image (which rank needs), and it helps when it's time to run.
+// Most of them cost money every month. Miss the upkeep and they get repossessed, in public.
+const LIFE=[
+  {id:"watch",name:"Gold watch",cost:25e3,img:1,trust:2,heat:0,d:"Status-seekers never walk out on an Exclusive pitch. Pawnable on the way out."},
+  {id:"car",name:"Italian sports car",cost:350e3,img:2,trust:3,heat:3,upkeep:3e3,
+    repo:["Repo men tow fund founder's sports car","Neighbors filmed the whole thing."],d:"One more person at your desk every day. A fast way out of town."},
+  {id:"party",name:"Throw a party on the water",cost:400e3,img:0,trust:8,heat:6,loy:12,repeat:true,d:"Once a month. A big lift in trust and crew loyalty. Big attention too."},
+  {id:"yacht",name:"Yacht",cost:1.2e6,img:3,trust:3,heat:4,upkeep:20e3,
+    repo:["Fund founder's yacht seized at the marina","Harbor master: \"The slip fee hadn't been paid in weeks.\""],d:"Opens the marina as a way out."},
+  {id:"penthouse",name:"Harbor penthouse",cost:2.5e6,img:3,trust:4,heat:5,upkeep:25e3,
+    repo:["Bank takes back founder's harbor penthouse","Movers carried out a solid-gold espresso machine."],d:"Whales come to you. A panic room buys 5 more seconds in a raid."},
+  {id:"island",name:"Private island",cost:25e6,img:4,trust:3,heat:8,upkeep:60e3,
+    repo:["Founder's private island listed for back taxes","The listing calls it \"recently vacated.\""],d:"Somewhere to go when this is over. Better escape odds."},
+];
+function showLife(){
+  const s=S, nx=RANKS[s.rank+1];
+  modal(`<h3>The good life</h3>
+    <p class="hint">Paid from your stash (${fmt(s.stash)}). Your image is <b>${image(s)}</b>.${nx?` Becoming a ${nx.t.toLowerCase()} takes ${fmt(nx.min)} under management and an image of ${nx.img}.`:""} Upkeep comes out of your stash every month.</p>
+    <div class="opts">${LIFE.map(it=>{const own=!it.repeat&&s.life[it.id], used=it.repeat&&s.partyWeek===s.week;
+      return `<button class="opt ${own?"owned":""}" data-act="buylife" data-v="${it.id}" ${own||used||s.stash<it.cost?"disabled":""}><span class="nm">${it.name}${it.img?` · image +${it.img}`:""}<small>${it.d}${it.upkeep?` Upkeep ${fmt(it.upkeep)} a month.`:""}</small></span><span class="c">${own?"Owned":used?"Done":fmt(it.cost)}</span></button>`;}).join("")}</div>
+    <div class="btns"><button class="big alt" data-act="close">Back</button></div>`);
+}
+function buyLife(id){
+  const s=S, it=LIFE.find(x=>x.id===id);
+  if(s.stash<it.cost||(!it.repeat&&s.life[id])||(it.repeat&&s.partyWeek===s.week))return;
+  s.stash-=it.cost;s.trust=clamp(s.trust+it.trust,0,100);s.heat=clamp(s.heat+it.heat,0,100);
+  if(it.loy)for(const l of s.lts)l.loyalty=clamp(l.loyalty+it.loy,0,100);
+  if(it.repeat){s.partyWeek=s.week;s.parties=(s.parties||0)+1;s.notes.push("Your party on the water ran until sunrise. Somebody's phone was filming.");}
+  else{s.life[id]=true;if(id==="yacht")s.yacht=true;s.owned=s.owned||{};s.owned[id]=true;s.notes.push(`You bought a ${it.name.toLowerCase()}.`);}
+  play("kaching");burst(14);render();showLife();
+}
+
+// The view out your office window. It changes with every office, and it's where the dread shows up first.
+function streetSVG(s){
+  const r=s.rank, ch=s.chill||0, night=r>=3||ch>0.55;
+  let g=`<rect width="360" height="70" fill="${night?"#0c1320":r>=2?"#24324a":"#2c3d4a"}"/>`;
+  const lit=(x,y,w,h,step,seed)=>{let o="";for(let yy=y+3;yy<y+h-2;yy+=step)for(let xx=x+3;xx<x+w-3;xx+=step)
+    if((xx*13+yy*7+seed*5)%7>3)o+=`<rect x="${xx}" y="${yy}" width="2" height="2" fill="#f2d48a" opacity="${night?0.9:0.5}"/>`;return o;};
+  const blocks=(list,fill,step)=>list.map(([x,y,w,h],i)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`+lit(x,y,w,h,step,i)).join("");
+  let carY=60, k=1;
+  if(r===0){ // across the parking lot
+    g+=`<rect x="0" y="42" width="360" height="28" fill="#22292d"/>`+[40,95,150,205,260].map(x=>`<rect x="${x}" y="54" width="2" height="12" fill="#58606a"/>`).join("")
+      +`<rect x="14" y="14" width="280" height="28" fill="#2b2f36"/><text x="48" y="32" font-family="Archivo Black,Impact,sans-serif" font-size="10" fill="#ff5fa2">NAILS</text>`
+      +`<text x="200" y="32" font-family="Archivo Black,Impact,sans-serif" font-size="10" fill="#5fd48a">PAWN · CASH</text>`
+      +`<rect x="306" y="8" width="2" height="36" fill="#454b52"/><circle cx="307" cy="8" r="3" fill="#ffe9a8"/>`;
+  }else if(r===1){ // street level, downtown
+    g+=blocks([[0,8,70,40],[74,14,60,34],[138,4,80,44],[222,12,64,36],[290,6,70,42]],"#28323a",6)
+      +`<rect x="0" y="48" width="360" height="22" fill="#1d2226"/><rect x="0" y="48" width="360" height="2" fill="#3a4148"/>`;carY=64;
+  }else if(r===2){ // 20th floor
+    g+=blocks([[0,20,50,50],[54,10,40,60],[98,26,60,44],[162,6,46,64],[212,22,54,48],[270,14,40,56],[314,28,46,42]],"#1f2935",5);carY=68;k=0.45;
+  }else if(r===3){ // top of the tower, harbor beyond
+    g+=blocks([[0,30,40,26],[44,22,36,34],[84,34,50,22],[138,18,30,38],[172,28,60,28],[236,24,40,32],[280,32,80,24]],"#1b2430",5)
+      +`<rect x="0" y="56" width="360" height="14" fill="#10202a"/>`+[20,80,150,230,300].map(x=>`<rect x="${x}" y="61" width="18" height="1" fill="#f2d48a" opacity=".5"/>`).join("");carY=56;k=0.35;
+  }else{ // penthouse: the whole city below you
+    g+=`<circle cx="300" cy="14" r="6" fill="#e8e4cf" opacity=".85"/>`+[30,70,120,200,250,335].map((x,i)=>`<circle cx="${x}" cy="${5+(i*5)%14}" r=".8" fill="#fff" opacity=".6"/>`).join("")
+      +blocks([[0,46,30,14],[34,42,24,18],[62,48,40,12],[106,40,20,20],[130,46,50,14],[184,44,30,16],[218,48,60,12],[282,42,26,18],[312,47,48,13]],"#141c26",4)
+      +`<rect x="0" y="60" width="360" height="10" fill="#0b1820"/>`;carY=60;k=0.3;
+  }
+  // The sedan never parks anymore. It cruises past with its lights on, and faster as things get worse.
+  // Anything that wasn't out there last month pulses the first time you see it.
+  const kk=Math.max(k,0.6), ping=`<circle class="ping" cx="17" cy="-8" r="22" fill="none" stroke="#e9c46a" stroke-width="2"/>`;
+  const sedan=(y,sc,fresh)=>`<g transform="translate(0 ${y}) scale(${sc})"><g class="cruise" style="animation-duration:${(13-7*ch).toFixed(1)}s">`
+    +`<polygon points="34,-6 70,-12 70,2" fill="#ffe9a8" opacity=".35"/><rect x="0" y="-8" width="34" height="8" rx="2" fill="#030405"/><rect x="7" y="-13" width="18" height="6" rx="2" fill="#030405"/>`
+    +`<rect x="9" y="-12" width="6" height="4" fill="#1d2a36"/><rect x="17" y="-12" width="6" height="4" fill="#1d2a36"/><circle class="cig" cx="12" cy="-10" r="1.6" fill="#ff8a3d"/>`
+    +`<rect x="32" y="-7" width="3" height="2.5" fill="#fff6c8"/><rect x="-1" y="-7" width="2.5" height="2.5" fill="#ff3b3b"/>${fresh?ping:""}</g></g>`;
+  const van=(x,y,sc,fresh)=>`<g transform="translate(${x} ${y}) scale(${sc})"><rect x="0" y="-15" width="42" height="15" rx="2" fill="#0a0c0e"/><rect x="30" y="-13" width="9" height="5" fill="#1d2a36"/>`
+    +`<path d="M10 -15 L10 -20 M6 -24 Q10 -18 16 -22" stroke="#0a0c0e" stroke-width="2" fill="none"/><circle class="blink" cx="38" cy="-17" r="1.6" fill="#ff3b3b"/>${fresh?ping:""}</g>`;
+  if(s.vanSeen)g+=van(186,carY,kk,!s.prevVan);
+  if(s.carSeen)g+=sedan(carY,kk,!s.prevCar);
+  if(ch>0.6)g+=`<g class="rain">${Array.from({length:40},(_,i)=>`<line x1="${(i*37)%360}" y1="${(i*23)%70}" x2="${(i*37)%360-5}" y2="${(i*23)%70+11}" stroke="#b8cad6" stroke-width=".8" opacity=".6"/>`).join("")}</g>`;
+  // The window frame and the top of the blinds.
+  g+=`<rect x="1.5" y="1.5" width="357" height="67" fill="none" stroke="#080b0d" stroke-width="3"/><rect x="179" y="0" width="2.5" height="70" fill="#080b0d"/>`
+    +[3,6.5,10].map(y=>`<rect x="0" y="${y}" width="360" height="1.6" fill="#080b0d" opacity=".55"/>`).join("");
+  return `<svg viewBox="0 0 360 70" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${g}</svg>`;
+}
+// The darkness at the edges grows faster than the heat: barely there at first, crushing at the end.
+const setChill=s=>{const c=s.chill||0;document.body.style.setProperty("--chill",c.toFixed(3));document.body.style.setProperty("--dark",Math.min(1,Math.pow(c,1.6)*1.25).toFixed(3));document.body.classList.toggle("dread",c>0.72);};
+let shown=null;
+
+// ---------- Sound (synthesized, no files) ----------
+const SND={on:true,ctx:null,fx:null,mus:null};
+try{SND.on=localStorage.getItem("ponzi-sound")!=="off";}catch(e){}
+function ac(){
+  if(!SND.ctx){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;SND.ctx=new C();
+    SND.fx=SND.ctx.createGain();SND.fx.gain.value=0.5;SND.fx.connect(SND.ctx.destination);
+    SND.mus=SND.ctx.createGain();SND.mus.gain.value=0.16;SND.mus.connect(SND.ctx.destination);}catch(e){return null;}}
+  if(SND.ctx.state==="suspended")SND.ctx.resume();
+  return SND.ctx;
+}
+function tone(f,t,dur,type,vol,to,out){
+  const c=SND.ctx,o=c.createOscillator(),g=c.createGain();
+  o.type=type||"sine";o.frequency.setValueAtTime(f,t);if(to)o.frequency.exponentialRampToValueAtTime(to,t+dur);
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.008);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g);g.connect(out||SND.fx);o.start(t);o.stop(t+dur+0.02);
+}
+let NOISE=null;
+function noise(t,dur,vol,freq,type,out){
+  const c=SND.ctx;
+  if(!NOISE){NOISE=c.createBuffer(1,c.sampleRate,c.sampleRate);const d=NOISE.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+  const src=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain();
+  src.buffer=NOISE;src.loop=true;f.type=type||"bandpass";f.frequency.value=freq||1000;
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  src.connect(f);f.connect(g);g.connect(out||SND.fx);src.start(t);src.stop(t+dur+0.02);
+}
+const SFX={
+  kaching:t=>{noise(t,0.06,0.25,5000,"highpass");tone(1568,t+0.02,0.12,"square",0.12);tone(2093,t+0.09,0.45,"square",0.12);tone(2637,t+0.09,0.45,"triangle",0.08);},
+  coins:t=>{for(let i=0;i<7;i++)tone(1800+Math.random()*1600,t+i*0.045,0.08,"triangle",0.07);},
+  stamp:t=>{tone(120,t,0.18,"sine",0.6,45);noise(t,0.1,0.35,900,"lowpass");},
+  tick:t=>tone(1200,t,0.025,"square",0.03),
+  walk:t=>tone(300,t,0.2,"triangle",0.1,170),
+  ring:t=>{for(let k=0;k<2;k++)for(let i=0;i<8;i++){tone(440,t+k*0.55+i*0.05,0.045,"sine",0.06);tone(480,t+k*0.55+i*0.05,0.045,"sine",0.06);}},
+  thump:t=>{tone(60,t,0.14,"sine",0.7,38);tone(55,t+0.2,0.12,"sine",0.5,38);},
+  roar:t=>{noise(t,1.6,0.4,700,"bandpass");noise(t+0.1,1.4,0.25,1600,"bandpass");},
+  siren:t=>{const c=SND.ctx,o=c.createOscillator(),g=c.createGain();o.type="sawtooth";o.frequency.setValueAtTime(600,t);
+    for(let i=0;i<4;i++){o.frequency.linearRampToValueAtTime(950,t+i*0.6+0.3);o.frequency.linearRampToValueAtTime(600,t+i*0.6+0.6);}
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.06,t+0.05);g.gain.setValueAtTime(0.06,t+2.3);g.gain.exponentialRampToValueAtTime(0.0001,t+2.4);
+    o.connect(g);g.connect(SND.fx);o.start(t);o.stop(t+2.5);},
+};
+function play(name){if(!SND.on)return;const c=ac();if(!c)return;try{SFX[name](c.currentTime+0.01);}catch(e){}}
+// Music: a swaggering groove while things are good, a heartbeat and a drone when they aren't.
+const MUS={iv:null,step:0,next:0};
+function musicOn(){const c=ac();if(!c||MUS.iv||!SND.on)return;MUS.next=c.currentTime+0.1;MUS.iv=setInterval(musicTick,60);}
+function musicOff(){clearInterval(MUS.iv);MUS.iv=null;}
+function musicTick(){
+  const c=SND.ctx;if(!c||!SND.on)return;
+  // Ease toward the current mood over several seconds, so the shift creeps in instead of switching.
+  MUS.mood=(MUS.mood==null?0:MUS.mood)+((S&&S.chill||0)-(MUS.mood||0))*0.015;
+  const m=MUS.mood, swag=clamp(1-(m-0.25)*2,0,1), dread=clamp((m-0.2)*1.8,0,1), spb=60/(108-34*m)/4, o=SND.mus;
+  const v=(x,k)=>Math.max(0.0002,x*k);
+  while(MUS.next<c.currentTime+0.25){
+    const st=MUS.step%16, bar=Math.floor(MUS.step/16), t=MUS.next;
+    if(swag>0.01){
+      if(st===0||st===6||st===8)tone(70,t,0.18,"sine",v(0.9,swag),40,o);
+      if(st===4||st===12)noise(t,0.12,v(0.35,swag),1800,"bandpass",o);
+      if(st%2===0)noise(t,0.03,v(0.12,swag),8000,"highpass",o);
+      const root=[55,55,49,61.7][bar%4];
+      if(st===0||st===3||st===8||st===11)tone(root*(st===11?1.5:1),t,0.22,"sawtooth",v(0.18,swag),null,o);
+      if(st===14&&bar%2===1)tone(root*4,t,0.12,"square",v(0.06,swag),null,o);
+    }
+    if(dread>0.01){
+      if(st===0)tone(55,t,0.16,"sine",v(1,dread),36,o);
+      if(st===3)tone(50,t,0.14,"sine",v(0.7,dread),36,o);
+      if(st===0&&bar%2===0)tone(73.4,t,spb*32,"sawtooth",v(0.05,dread),null,o);
+      if(st===8&&m>0.7)tone(1046+Math.random()*30,t,0.08,"sine",v(0.04,dread),null,o);
+    }
+    MUS.next+=spb;MUS.step++;
+  }
+}
+// Drop the music out entirely (the raid's moment of black), then bring it back.
+function musicDuck(off){if(SND.mus&&SND.ctx)SND.mus.gain.setTargetAtTime(off?0.0001:0.16,SND.ctx.currentTime,off?0.05:0.6);}
+function setSound(on){SND.on=on;try{localStorage.setItem("ponzi-sound",on?"on":"off");}catch(e){}if(on){ac();musicOn();}else musicOff();}
+document.addEventListener("pointerdown",()=>{if(SND.on){ac();musicOn();}});
+
+// ---------- Effects ----------
+function burst(n){const L=$("fx");for(let i=0;i<n;i++){const e=document.createElement("i"),a=Math.random()*Math.PI*2,r=60+Math.random()*130;
+  e.className="coin";e.style.setProperty("--dx",Math.cos(a)*r+"px");e.style.setProperty("--dy",(Math.sin(a)*r-70)+"px");e.style.animationDelay=Math.random()*0.08+"s";
+  L.appendChild(e);setTimeout(()=>e.remove(),1200);}}
+function stampFx(top,bottom,no){const e=document.createElement("div");e.className="stamp"+(no?" no":"");e.innerHTML=`<b>${top}</b>${bottom?`<span>${bottom}</span>`:""}`;$("fx").appendChild(e);setTimeout(()=>e.remove(),1450);}
+function shake(){const a=$("app");a.classList.remove("shake");void a.offsetWidth;a.classList.add("shake");}
+function countUp(el,from,to,f,ms=900){if(!el)return;const t0=performance.now();
+  const step=now=>{const p=Math.min(1,(now-t0)/ms),e=1-Math.pow(1-p,3);el.textContent=f(from+(to-from)*e);if(p<1)requestAnimationFrame(step);};requestAnimationFrame(step);}
+
+function showRankUp(){
+  const R=RANKS[S.rank];play("kaching");setTimeout(()=>play("roar"),200);burst(28);
+  modal(`<div class="tag">Month ${S.week}</div><div class="rk">${R.t.toUpperCase()}</div>
+    <p>You're a ${R.t.toLowerCase()} now. New digs: <b>${R.office}</b>.</p><p class="narr">“${pick(RANK_LINES)}”</p>
+    <div class="tag">What changes</div>${perkList(S.rank,true)}
+    <div class="btns"><button class="big go" data-act="paper">Read the Ledger</button></div>`,"gold");
+}
+
+// ---------- The raid: ten real seconds ----------
+let raidIv=null;
+function startRaid(){
+  // Your lawyer stalls them in the lobby; the penthouse panic room buys a little more.
+  const s=S;s.raidT=(has(s,"lawyer")?15:10)+(s.life.penthouse?5:0);s.raidGrab=false;
+  // Black. Silence. One flash of red and blue. Then the sirens, and the clock starts.
+  const b=$("blackout");musicDuck(true);b.className="on";
+  setTimeout(()=>{b.className="on flash";play("siren");},1400);
+  setTimeout(()=>{b.className="";musicDuck(false);raidModal();
+    let last=performance.now(),sec=s.raidT;
+    raidIv=setInterval(()=>{const now=performance.now();s.raidT-=(now-last)/1000;last=now;
+      const c=Math.ceil(s.raidT);if(c<sec){sec=c;play("thump");}
+      if(s.raidT<=0){stopRaid();ending("caught",null,"froze");return;}
+      const el=$("raidT");if(el)el.textContent=Math.max(0,c);},100);
+  },2300);
+}
+function raidModal(){
+  const s=S, amt=Math.max(0,Math.round(s.cash*0.5));
+  modal(`<div class="tag">Month ${s.week} · right now</div><h3>Agents in the lobby</h3><div class="count" id="raidT">${Math.ceil(s.raidT)}</div>
+    <p>They're coming up the stairs. ${has(s,"lawyer")?"Your lawyer is stalling them in the lobby. ":""}${s.life.penthouse?"The panic room door is holding. ":""}${s.prep.jet?"Your pilot is fueling the jet.":"The fire escape is out the back window."}</p>
+    <div class="btns"><button class="big run" data-act="raidrun">${s.prep.jet?"Run for the jet":"Out the back window"}</button>
+    <button class="big alt" data-act="raidgrab" ${s.raidGrab||amt<1?"disabled":""}>Empty the safe first · ${fmt(amt)} · costs 4 sec</button>
+    <button class="big alt" data-act="raidgive">Surrender</button></div>`,"raid");
+}
+function stopRaid(){clearInterval(raidIv);raidIv=null;}
+
+// ---------- One last deal, then the Night of the Run ----------
+let nightIv=null;
+const ROUTES=[
+  {id:"jet",name:"Private jet",scan:"the private airstrip",need:s=>s.prep.jet,d:"Wheels up from the private strip"},
+  {id:"yacht",name:"The marina",scan:"the marina",need:s=>s.yacht||(s.life&&s.life.island),d:"Open water by sunrise"},
+  {id:"passport",name:"The airport",scan:"the airport",need:s=>s.prep.passport,d:"A new name and a window seat"},
+  {id:"car",name:"The sports car",scan:"the coast highway",need:s=>s.life&&s.life.car,d:"Floor it down the coast highway"},
+  {id:"none",name:"Drive for the border",scan:"the highways south",need:()=>true,d:"Nineteen hours, radio off"},
+];
+const scanOf=id=>ROUTES.find(r=>r.id===id).scan;
+function beginRun(){
+  const s=S;
+  // Greed's last trick: the call always comes when you've decided to leave.
+  if(s.owed>1e6&&s.week-s.lastDeal>=4&&Math.random()<0.5){
+    s.lastDeal=s.week;s.dealDep=Math.round(Math.max(1e6,s.owed*rand(0.15,0.3))/1e5)*1e5;play("ring");
+    modal(`<div class="tag">Your phone rings</div><h3>One last deal</h3>
+      <p>A family office from Geneva: "We'd like to place <b class="good">${fmt(s.dealDep)}</b> with you. But we need to meet in person. Monday."</p>
+      <p class="narr">“One more month. What's one more month?”</p>
+      <div class="btns"><button class="big go" data-act="staydeal">Stay for the ${fmt(s.dealDep)}</button><button class="big run" data-act="startnight">Hang up and go</button></div>`);
+    return;
+  }
+  startNight(false);
+}
+function stayDeal(){const s=S;s.whaleNext={dep:s.dealDep};s.heat=clamp(s.heat+5,0,100);s.notes.push("You told Geneva you'd see them Monday.");closeModal();render();}
+
+function startNight(collapsed){
+  const s=S, open=ROUTES.filter(r=>r.need(s));
+  // One route is being watched. The scanner names it, usually correctly.
+  const hot=open.length>1?pick(open):null, named=hot&&Math.random()<0.8?hot:pick(ROUTES);
+  s.night={t:collapsed?30:45,step:0,mods:0,hot:hot&&hot.id,named:named.id,collapsed};
+  play("siren");renderNight();
+  let last=performance.now(),sec=s.night.t;
+  nightIv=setInterval(()=>{const n=S.night;if(!n)return;const now=performance.now();n.t-=(now-last)/1000;last=now;
+    const c=Math.ceil(n.t);if(c<sec){sec=c;if(c<=10)play("thump");}
+    if(n.t<=0){stopNight();S.night=null;ending("caught",null,"tooslow");return;}
+    const el=$("nightT");if(el)el.textContent=Math.max(0,c);},100);
+}
+function stopNight(){clearInterval(nightIv);nightIv=null;}
+function nightSteps(s){
+  const n=s.night, grab=Math.max(0,Math.round(s.cash*0.6));
+  return [
+    {h:"The safe",p:`There's ${fmt(Math.max(0,s.cash))} of fund money in the office safe.`,o:[
+      {l:`Empty it into a gym bag · +${fmt(grab)}`,c:8,dis:grab<1,f:()=>{s.cash-=grab;s.stash+=grab;s.grabbed=grab;play("coins");}},
+      ...(s.life.watch?[{l:"Pawn the gold watch on the way · +$20k",c:3,f:()=>{s.stash+=20e3;s.pawned=true;s.life.watch=false;play("coins");}}]:[]),
+      {l:"Leave it. Go.",c:0,f:()=>{}}]},
+    {h:"The files",p:"Filing cabinets and hard drives full of fake statements.",o:[
+      {l:"Shred everything you can",c:10,f:()=>{n.mods+=8;s.shredded=true;play("roar");}},
+      {l:"Pull the hard drive and run",c:4,f:()=>{n.mods+=3;}},
+      {l:"Leave it all",c:0,f:()=>{}}]},
+    {h:"One call",p:"One call before you ditch the phone. They might be listening.",o:[
+      {l:"Your lawyer: which way is safe?",c:6,f:()=>{s.calledLawyer=true;n.msg=n.hot?`Your lawyer: "Stay away from ${scanOf(n.hot)}. They're waiting there."`:`Your lawyer: "They're not watching any one route. Just go."`;}},
+      {l:"Your mother, to say goodbye",c:5,f:()=>{s.calledMom=true;
+        if(Math.random()<(s.heat>60?0.55:0.2)){n.t-=15;s.momTapped=true;n.msg="Halfway through, the line clicks. They heard. You just lost 15 seconds.";play("thump");}
+        else{n.mods+=10;n.msg="Her voice steadies your hands. You feel ready.";}}},
+      ...(has(s,"smuggler")?[{l:"Your smuggler",c:4,f:()=>{n.mods+=15;n.msg=`Your smuggler: "There's a boat with your name on it. Go now."`;}}]:[]),
+      {l:"No calls. Phone in the harbor.",c:1,f:()=>{}}]},
+    {h:"The way out",p:`Your police scanner: <i>"All units, watch ${scanOf(n.named)}."</i>`,
+      o:ROUTES.filter(r=>r.need(s)).map(r=>({l:`${r.name} · ${r.d}`,c:0,route:r.id,f:()=>{s.route=r.id;if(r.id===n.hot)n.mods-=25;if(r.id==="car")n.mods+=5;}}))},
+  ];
+}
+function renderNight(){
+  const s=S, n=s.night, st=nightSteps(s)[n.step];
+  modal(`<div class="tag">${n.collapsed?"The fund has collapsed":"The Night of the Run"} · ${n.step+1} of 4</div>
+    <div class="count" id="nightT">${Math.ceil(n.t)}</div>${n.msg?`<p class="narr">${n.msg}</p>`:""}<h3>${st.h}</h3><p>${st.p}</p>
+    <div class="btns">${st.o.map((o,i)=>`<button class="big ${i===0?"run":"alt"}" data-act="nightpick" data-v="${i}" ${o.dis?"disabled":""}>${o.l}${o.c?` · ${o.c}s`:""}</button>`).join("")}</div>`,"raid");
+}
+function nightPick(i){
+  const s=S, n=s.night;if(!n)return;
+  const o=nightSteps(s)[n.step].o[i];if(!o||o.dis)return;
+  n.t-=o.c;n.msg="";o.f();
+  if(n.t<=0){stopNight();s.night=null;ending("caught",null,"tooslow");return;}
+  if(o.route){stopNight();const how=n.collapsed?"collapse":"run",pen=-n.mods+(n.collapsed?20:0);s.night=null;attemptEscape(pen,how);return;}
+  n.step++;renderNight();
+}
+
+// ---------- Epilogue ----------
+// Built from sections chosen by what actually happened in the run, each with its own variants.
+const flag=(s,t)=>s.flags?s.flags[t]:undefined;
+const methodOf=s=>s.route||(s.prep.jet?"jet":s.yacht?"yacht":s.prep.passport?"passport":"none");
+function epilogue(s,kind,how){
+  const out=[], m=methodOf(s), kept=Math.round(s.stash*keepShare(s)), frozen=s.stash-kept, yrs=sentence(s), esc=kind==="escaped";
+  const R=RANKS[s.rank].t.toLowerCase(), L=s.life||{}, owned=s.owned||{};
+
+  // The ending scene
+  const ESC={
+    jet:[`At 3 a.m. your jet lifted off from a private strip outside ${CITY}. The pilot never asked your name.`,
+      `You told your assistant you had a conference in Geneva. The jet filed a flight plan for Geneva. It landed somewhere else.`,
+      `The jet climbed through the clouds and you finally exhaled. The flight attendant asked if you wanted champagne. You asked for two.`],
+    yacht:[`You sailed out of ${CITY} harbor at dawn and waved at the coast guard like any other rich idiot.`,
+      `You took the yacht out "for the weekend." Past the twelve-mile line, you threw your phone overboard.`,
+      `You cut the running lights and slid out of the marina in the dark. By sunrise, ${CITY} was a smudge on the horizon.`],
+    passport:[`You walked through airport security as Gerald Pemberton, a man who sells industrial carpet. Nobody looked twice.`,
+      `Your new passport said you were a Canadian dentist. You practiced the accent for the whole flight.`,
+      `The gate agent wished "Mr. Delacroix" a pleasant flight. You smiled like someone who had never heard of ${FUND}.`],
+    car:[`You took the coast highway at a hundred and thirty with the top down. Somewhere past the state line, you started laughing and couldn't stop.`,
+      `The Italian engine screamed through three counties. A trucker flashed his lights at you. You flashed yours back. Then you were gone.`],
+    none:[`You crossed the border on a Greyhound bus with a duffel bag of cash and a fake mustache. Somehow, it worked.`,
+      `You drove south for nineteen hours with the radio off and the cash in a picnic cooler.`,
+      `You bought a rusty pickup for cash at a truck stop and drove until the road signs changed language.`],
+  };
+  const FAIL={
+    jet:[`The jet never got clearance. Agents were waiting on the tarmac with coffee.`,`Your pilot had made a deal with the FBI. He landed the jet right back in ${CITY}.`,
+      `The jet sat on the runway for forty minutes, "waiting for a slot." You knew before the door opened.`],
+    yacht:[`The coast guard boarded your yacht eleven miles out. You were wearing a captain's hat.`,`The yacht ran out of fuel within sight of the shore. Nobody had checked.`,
+      `A harbor patrol boat was waiting at the mouth of the marina, lights off, engine idling.`],
+    passport:[`The passport was good. The photo wasn't. The border agent compared it to the poster on her wall.`,`You forgot your new name at passport control. Twice.`,
+      `The gate agent smiled, said "One moment, Mr. Delacroix," and picked up a phone.`],
+    car:[`A roadblock at the county line. The sports car was easy to spot. It's the only red one in the state.`,`You hit a speed trap doing a hundred and forty. The trooper recognized you from the news.`],
+    none:[`You were arrested at a gas station forty miles from the border, paying cash for beef jerky.`,`You missed your flight by four minutes. The agents didn't.`,
+      `A state trooper pulled you over for a broken taillight. Then he looked at the duffel bag on the passenger seat.`],
+  };
+  let scene;
+  if(esc){
+    scene=how==="raid"?(s.prep.jet?pick([`Agents came through the front door as you went out the back. Your jet left the runway ninety seconds before the airport was shut down.`,`You heard the sirens from the hangar. The wheels were already up.`])
+      :pick([`You went down the fire escape as agents came up the stairs, flagged a cab, and made the last flight out with a gym bag full of cash.`,`You climbed out the bathroom window, dropped into the dumpster behind the building, and walked to the bus station smelling like old lettuce. Worth it.`]))
+      :(how==="collapse"?pick(["With investors pounding on the front door, you slipped out through the noodle shop next door. ","The lobby was full of screaming investors. You went out through the parking garage in a janitor's jacket. "]):"")+pick(ESC[m]||ESC.none);
+  }else if(kind==="failed"){
+    scene=how==="raid"?(s.prep.jet?`You made it to the hangar. So did the FBI.`:pick([`You made it down the fire escape. Two agents were waiting in the alley, eating sandwiches.`,`The fire escape ended one floor short. You hung there until the agents brought a ladder.`]))
+      :(how==="collapse"?"You ran the night the fund collapsed, with half the city looking for you. ":"")+pick(FAIL[m]||FAIL.none);
+  }else if(how==="surrender"){
+    scene=pick([`Agents filled the lobby. You straightened your tie, put your hands up and asked for a lawyer.`,`You met them at the elevator with your coat on. "Let's not make a scene," you said. They made a scene anyway.`]);
+  }else if(how==="tooslow"){
+    scene=pick([`You were still stuffing cash into a gym bag when the elevator doors opened.`,`You were halfway down the stairs when you heard them coming up.`,`You had one shoe on and the car keys in your teeth when they kicked the door in.`]);
+  }else if(how==="froze"){
+    scene=pick([`You heard them on the stairs and froze. You were still standing at the window, watching the street, when they came in.`,`Your legs wouldn't move. You sat back down at your desk and waited. It took them four minutes.`]);
+  }else{
+    scene=pick([`Agents knocked at 6 a.m. You answered in a bathrobe that cost more than most people's rent.`,
+      `They arrested you in the middle of a seminar, in front of two hundred potential investors. Three of them still asked for your card.`,
+      `Agents walked into your office while you were on the phone promising someone "nothing but upside."`,
+      `They picked you up at the car wash. Your car was half rinsed.`,
+      `They waited until you'd finished your steak at the club. One of them picked up the check. It was the only thing anyone ever paid you back.`,
+      `The arrest was on the evening news. You'd never looked so tired, or so tan.`]);
+  }
+  if(s.week<=6)scene+=" "+pick([`The whole thing lasted ${s.week} months. Historians still argue over whether it counts as a scheme or a long weekend.`,
+    `It lasted ${s.week} months. Most frauds take longer to set up.`,`${s.week} months, start to finish. The FBI's paperwork took longer.`]);
+  out.push(["The end",scene]);
+
+  // Your new life, or prison
+  if(esc){
+    let life=kept<50e3?pick([`You got away with ${fmt(kept)}. It lasted fourteen months. Now you tend bar in a beach town under a name you keep forgetting.`,
+        `${fmt(kept)} doesn't go far. You rent a room above a laundromat and give tennis lessons you're not qualified to give.`])
+      :kept<500e3?pick([`${fmt(kept)} bought a small café by the sea. The coffee is bad. Nobody asks questions.`,`With ${fmt(kept)}, you opened a surf shop. You can't surf. Business is fine.`])
+      :kept<5e6?pick([`${fmt(kept)} bought a house on a hill, a new nose, and a golden retriever named Dividend.`,`${fmt(kept)} bought a vineyard. The wine is terrible. You drink it anyway, every afternoon, on the porch.`])
+      :kept<50e6?pick([`${fmt(kept)} goes a long way in a country with no extradition treaty. You bought the local football club. The stadium carries your new name.`,
+        `With ${fmt(kept)}, you live in a walled villa with a pool shaped like a dollar sign. The locals call you "the Canadian."`])
+      :pick([`With ${fmt(kept)}, you bought an island. Then a second island, to keep an eye on the first.`,`${fmt(kept)}. You stopped counting. You started a foundation in your new name. It gives money to journalism schools, as a joke only you get.`]);
+    if(frozen>0)life+=` Another ${fmt(frozen)} was frozen by a bank that suddenly remembered its compliance rules.`;
+    if(!s.prep.villa&&!L.island)life+=" "+pick([`You never set up a safe home, so you move every few months and never unpack.`,`With no safe house, you sleep in a different bed every month. You keep a bag packed by the door.`]);
+    out.push(["Your new life",life]);
+  }else{
+    let fate=s.prep.shells?`Your shell companies kept investigators busy for years. They clawed back ${fmt(s.stash*0.3)} of your ${fmt(s.stash)} stash.`
+      :s.stash>0?pick([`Investigators found your offshore stash in a month. All ${fmt(s.stash)} of it.`,`The ${fmt(s.stash)} you skimmed was found in an account with your dog's name as the password.`])
+      :`There was no stash. You never kept a dollar for yourself. Prosecutors found that the most confusing part of the case.`;
+    fate+=` The judge gave you ${yrs} years.`+(yrs>=100?" "+pick([`The judge said the number was symbolic. It doesn't feel symbolic.`,`Your lawyer did the math on a napkin and stopped talking.`])
+      :yrs<=15?` You'll be out before your hair goes fully gray.`:"");
+    fate+=" "+pick([`You run the prison's commissary black market now. Old habits.`,
+      `You teach a personal finance class to the other inmates. You're the only one who finds it funny.`,
+      `You wrote a memoir in your cell. The royalties go to your victims.`,
+      `Your cellmate gave you his commissary money to invest. He keeps asking about returns.`,
+      `You started a book club. Every pick is about a heist. The warden asked you to stop.`,
+      `You work in the prison laundry. You've never been this honest, and you've never been this bored.`,
+      `The other inmates call you "the Banker." Two of them owe you cigarettes. You charge interest.`,
+      `You get one hour in the yard a day. You spend it pacing, doing math on money you'll never see.`]);
+    out.push(["Prison",fate]);
+  }
+
+  // The investors
+  if(s.peakInv>0){
+    const rec=esc?Math.round(rand(5,25)):Math.round(rand(30,60));
+    let t=s.peakInv<25?pick([`Only ${num(s.peakInv)} people lost money, and most of them were friends. Thanksgiving is canceled indefinitely.`,`${num(s.peakInv)} people lost money. You know all of them by name. They know you by a different one now.`])
+      :pick([`${num(s.peakInv)} people believed in ${FUND}. A court-appointed trustee spent nine years recovering ${rec}% of the ${fmt(s.peakOwed)} they thought they had.`,
+        `The trustee's final report ran to 2,300 pages. ${num(s.peakInv)} investors got back ${rec} cents on the dollar.`,
+        `${num(s.peakInv)} investors filed claims. The trustee called it "the largest pile of hope and paperwork in ${CITY}'s history." They got back ${rec}%.`]);
+    const vig=[`Edna Fisk, a retired schoolteacher, lost the house she paid off in 1998.`,
+      `Carl Ruiz, a dentist, had put in his kids' college fund. He gives talks on warning signs now.`,
+      `Walt Brennan, a fisherman, lost his late wife's life insurance money.`,
+      `Maria Delgado had remortgaged her bakery to "double down." It's a vape shop now.`,
+      `Ruth Abernathy, a nurse, had talked six coworkers into investing. Five still aren't speaking to her.`,
+      `Sunil Mehta had invested his lottery winnings. He says he's "technically back where he started."`,
+      `The Ashford Otters' Little League lost its uniform fund. The kids played the season in plain white T-shirts.`,
+      `A retired firefighter named Dale Okafor drove four hours to every hearing. He sat in the front row and never said a word.`,
+      `Twins Patty and Pam Lindqvist each invested without telling the other. They found out at the same creditors' meeting.`,
+      `A widower named Ernest Pruitt framed his last account statement. "So I remember to read the fine print," he said.`];
+    if(flag(s,"A church group wants to invest")===0)vig.push(`Pastor Hollis's congregation lost the new-roof fund. That Sunday's sermon was about forgiveness. It was short.`);
+    if(s.peakInv>=25)t+=" "+shuffle(vig.slice()).slice(0,Math.random()<0.5?1:2).join(" ");
+    const mom=flag(s,"Your mom wants to invest");
+    if(mom===0)t+=` Your mother lost her retirement savings. She still sends a birthday card every year. It's blank inside.`;
+    else if(mom===1)t+=` Your mother, the one person you wouldn't take money from, told reporters you "had one decent bone."`;
+    if(flag(s,"A retired prosecutor wants in")===0)t+=` The retired prosecutor who invested with you came out of retirement to lead the case.`;
+    out.push(["The investors",t]);
+  }
+
+  // Optional sections. Each ending draws a different few.
+  const extra=[];
+  if(!esc)extra.push(["The trial",[
+      pick([`The prosecutor opened by reading your old ${FUND} brochure aloud. The jury laughed in all the wrong places.`,
+        `The trial lasted six weeks. Your lawyer's best argument was that the investors "should have known." It didn't land.`,
+        `Your defense called one witness: you. It was a mistake you made with total confidence.`,
+        `The courtroom sketch artist drew you smirking. You weren't, but the sketch went viral anyway.`]),
+      s.grabbed?`Exhibit 1 was a gym bag with ${fmt(s.grabbed)} in it.`:s.parties?`The jury saw photos from ${s.parties} of your parties on the water. One juror asked for copies.`:(s.hush||[]).length?`${s.hush[0].who} testified about the "consulting fees." In detail.`:`The jury saw a chart of your returns. It was a perfectly straight line. That was the whole case.`,
+      pick([`The jury deliberated for forty minutes, including lunch.`,`The jury took two days. You later learned one juror held out because he liked your suits.`,`The verdict took less time than reading the charges.`])].join(" ")]);
+  if(s.named&&s.named.length){
+    const first=s.named[0], big=s.biggest;
+    let w=`${first}, your very first investor, `+pick([`still has the welcome letter you signed. It hangs in their bathroom.`,`testified that you "seemed so sure." That was the problem.`,`started a support group for your investors. It meets in the room where you used to hold seminars.`,`now runs a podcast about financial fraud. You're episodes one through nine.`]);
+    if(big&&big.name!==first)w+=` ${big.name}, who handed you ${fmt(big.dep)} in a single afternoon, `+pick([`wants you to know they're "fine." Their lawyer says otherwise.`,`moved in with their adult children. Everyone is coping.`,`sued the bank, the auditor, and the Little League. They won against the bank.`,`still has the pen you signed with. They use it to sign checks they can actually cash.`]);
+    extra.push(["Where are they now",w]);
+  }
+  extra.push(["The story",pick([
+    `A streaming service made an eight-part series about you called "${pick(["Steady Returns","The Closer","Too Good To Be True","Evergreen"])}." The actor who played you won an award. Critics said he was "too likable."`,
+    `A true-crime podcast spent eleven episodes on ${FUND}. The host's verdict: "${pick(["Charming. Terrifying. Kind of impressive.","A ${R} with excellent posture.","The best liar this town ever produced."]).replace("${R}",R)}"`,
+    `The Ledger's reporter wrote a book about you. The cover is your face, in gold foil. It sells best at airports.`,
+    `Business schools teach your case now. Students are graded on spotting the warning signs. Most of them miss at least three.`,
+    `Someone made a board game about ${FUND}. Nobody ever wins it. That's the point.`])]);
+  const toys=[];
+  for(const it of LIFE.filter(x=>!x.repeat&&owned[x.id])){
+    const lost=!L[it.id]&&!(it.id==="watch"&&s.pawned);
+    toys.push(it.id==="watch"?(s.pawned?`You pawned the gold watch on your way out of town for twenty grand. The pawnbroker knew exactly who you were.`:esc?`You still wear the gold watch. It stopped working years ago. You wear it anyway.`:`The gold watch went into an evidence bag. You watched them write "1 watch, gold, gaudy" on the label.`)
+      :it.id==="car"?(lost?`The bank repossessed your sports car before the feds could. Nobody was surprised.`:esc?`Your sports car was found at the airport in a no-parking zone, engine still warm.`:`Your sports car was auctioned. The winning bid came from one of your investors.`)
+      :it.id==="yacht"?(lost?`The yacht was seized at the marina for unpaid fees. It's a party boat for bachelorette parties now.`:esc?`The yacht drifts in a harbor you'll never name. You named it "Steady Returns."`:`Your yacht was auctioned. A dentist bought it.`)
+      :it.id==="penthouse"?(lost?`The bank took the penthouse back. The listing photos still show your portrait on the wall.`:`The harbor penthouse is an FBI evidence room now. The view is wasted on it.`)
+      :(lost?`The island went up for back taxes. A hotel chain bought it.`:esc?`You live on your island now. It has one bar, and you own it.`:`Your island was seized. A government bird researcher lives there now.`));
+  }
+  if(toys.length)extra.push(["What you owned",shuffle(toys).slice(0,2).join(" ")]);
+  const FATE={
+    cfo:{loyal:[n=>`${n}, your CFO, never said a word to anyone. You still don't know if that was loyalty or fear.`,n=>`${n}, your CFO, took the fifth so many times the judge started counting out loud.`],
+      rat:[n=>`${n}, your CFO, walked prosecutors through every fake spreadsheet. The jury called it "a guided tour."`]},
+    marketer:{loyal:[n=>`${n} sells timeshares now. Same pitch, different product.`,n=>`${n} started a marketing agency. Their slogan is "Trust us."`],rat:[n=>`${n} testified that every slogan was your idea. Most of them were.`]},
+    lawyer:{loyal:[n=>`${n} became a cable news legal analyst and discusses your case most nights.`,n=>`${n} billed the estate for nine hundred hours. The trustee paid it.`],rat:[n=>`${n} cut a deal, then got disbarred anyway.`]},
+    source:{loyal:[n=>`${n} was quietly pushed off the force and opened a private security firm.`,n=>`${n} retired to a fishing boat that cost more than a detective's salary. Nobody asked.`],rat:[n=>`${n} had been wearing a wire for two months.`]},
+    pr:{loyal:[n=>`${n} wrote a tell-all called "Spin Cycle." It's mostly about ${n}.`,n=>`${n} now does crisis communications for a cruise line. They say it's calmer.`],rat:[n=>`${n} sold your text messages to a tabloid for six figures.`]},
+    smuggler:{loyal:[n=>esc?`${n} got you out, then vanished too. Every year you get a postcard with no return address.`:`${n} was never found. They used the escape route you paid for.`],rat:[n=>`${n} sold your escape route to the FBI.`]},
+  };
+  const crew=s.lts.map(l=>pick(FATE[l.role][l.loyalty>=45?"loyal":"rat"])(l.name));
+  for(const l of s.flipped||[])crew.push(pick(FATE[l.role].rat)(l.name)+` That's how the feds knew where to look.`);
+  for(const l of s.fired||[])if(Math.random()<0.5)crew.push(`${l.name}, whom you fired, gave the first interview. It ran four pages.`);
+  if(crew.length)extra.push(["Your crew",shuffle(crew).slice(0,2).join(" ")]);
+  const ends=[];
+  if(flag(s,"A streaming producer wants to film you")===0)ends.push(`The documentary crew got an ending they didn't plan for. It won an Emmy.`);
+  if(flag(s,"A journalist wants an interview")===0)ends.push(`The reporter who profiled you wrote a follow-up. It won a Pulitzer.`);
+  if(flag(s,"A famous skeptic posts about you")!==undefined)ends.push(`The influencer who called you out now sells a course called "How I Spotted ${FUND}."`);
+  if(flag(s,"A councilman hints at a donation")===0)ends.push(`The councilman who took your donation resigned "to spend more time with his family."`);
+  if(flag(s,"A foreign businessman wants to park money")===0)ends.push(esc?`The foreign businessman's associates are also looking for you. They're more motivated than the FBI.`:`In prison, you got a fruit basket with no card. You didn't eat it.`);
+  if(flag(s,"Old records in the basement")===0)ends.push(`The basement records were never recovered. The fire department still uses your alley for training.`);
+  if(flag(s,"Your ex wants more alimony")===1)ends.push(`Your ex sold the movie rights to your marriage.`);
+  if(flag(s,"A celebrity offers an endorsement")===0)ends.push(`The reality star who endorsed you claims they "were a victim too." They're doing a podcast about it.`);
+  if(s.plantsAccepted>0)ends.push(s.plantsAccepted===1?`One investor you signed personally turned out to be working against you. You still remember the handshake.`:`${s.plantsAccepted} investors you signed personally turned out to be agents, reporters or regulators. You'd shaken every one of their hands.`);
+  if(s.honestRejected>=5)ends.push(`You turned ${s.honestRejected} real investors away at your desk. They're the only ones who came out ahead.`);
+  if(s.calledMom)ends.push(s.momTapped?`Your goodbye call to your mother was played at trial. She cried. So did two jurors.`:esc?`Your mother gets a postcard every year with no return address. She keeps them on the fridge.`:`Your mother visits every other Sunday. She brings the same lemon cake. You've never told her you hate lemon.`);
+  if(s.shredded)ends.push(`You fed the shredder until it jammed. Investigators spent eight months taping strips back together.`);
+  if(s.bribes>0&&!(s.hush||[]).length)ends.push(`The regulator who lost your file was indicted too. He blames you.`);
+  if(s.rank>=4)ends.push(`For one glorious year, the Ledger called you "the Wolf of ${CITY}." They still do, but differently.`);
+  if(ends.length)extra.push(["Loose ends",shuffle(ends).slice(0,2).join(" ")]);
+  for(const x of shuffle(extra).slice(0,3))out.push(x);
+
+  // Years later
+  const later=esc?[
+    `Years later, you lost a third of your fortune to a crypto scheme run by a charming young man. You admired his work.`,
+    `Once, in an airport in Lisbon, a former investor recognized you. She didn't call the police. She just stared until you left.`,
+    `You tried starting a small, honest investment club in your new town. It didn't stay honest.`,
+    `The documentary about you ends on an empty chair and the words "Whereabouts unknown."`,
+    `You read the ${CITY} Ledger online every morning, looking for your name. It shows up less every year.`,
+    `On your birthday, an envelope arrives with no return address. Inside is a single ${CITY} Otters ticket stub. You never find out who sent it.`,
+    `You learned the local language, married a fisherman's widow, and became a deacon at the church. You've never been happier. You've never slept worse.`,
+    `A tourist asked to take a photo with you because you "look like that guy from the documentary." You said you get that a lot.`,
+    `Every time a car slows down outside your gate, you still check the mirror.`,
+    ...(s.prep.villa?[]:[`You check the news every morning for new extradition treaties.`])]
+   :[...(yrs<=20?[`You were released after ${Math.max(2,Math.round(yrs*0.7))} years for good behavior. On your first day out, someone handed you a flyer for a can't-miss investment.`,
+      `You got out after ${Math.max(2,Math.round(yrs*0.7))} years. You sell used cars now. You're very, very good at it.`]:[]),
+    `You applied for a presidential pardon. It was denied in four minutes.`,
+    `${CITY} renamed the street your office was on.`,
+    `You still get letters from investors. Most are angry. One asks if you're taking new money.`,
+    `A young inmate asked you to teach him "how you did it." You told him to get a real job. He laughed. So did you, eventually.`,
+    `Your old office is a laundromat now. The sign still has a ghost of the ${FUND} logo if you squint.`,
+    `On visiting days, nobody comes. You put on your good shirt anyway.`,
+    `The prison library has three books about you. You've checked them all out, so nobody else can.`];
+  out.push(["Years later",pick(later)]);
+  return out;
+}
+
+// ---------- Events ----------
+const big=s=>Math.max(50e3,s.owed*0.03);
+const lt=c=>c.lt;
+const EVENTS=[
+  {t:"A retired prosecutor wants in", b:s=>`She wants to invest ${fmt(big(s))}. She asks a lot of questions.`, ch:[
+    {l:"Take her money", f:s=>{const a=big(s);s.cash+=a;s.owed+=a;s.investors++;s.heat+=7;return "Her check clears. She asks for a quick look at your books.";}},
+    {l:"Politely decline", f:()=>"She invests somewhere else."}]},
+  {t:"An early investor wants out", when:s=>s.investors>20, b:s=>`He wants all ${fmt(Math.max(10e3,s.owed*0.04))} back, today.`, ch:[
+    {l:"Pay him in full", cost:s=>Math.max(10e3,s.owed*0.04), f:s=>{s.trust+=6;return "He tells everyone how smoothly it went.";}},
+    {l:"Stall him", f:s=>{s.trust-=10;s.heat+=5;return "He starts posting about it online.";}}]},
+  {t:"A journalist wants an interview", b:()=>"She's writing a profile on high-performing funds.", ch:[
+    {l:"Turn on the charm", f:s=>{if(Math.random()<0.5){s.heat-=8;s.trust+=5;return "The profile is glowing.";}s.heat+=12;return "The article asks how your returns are possible.";}},
+    {l:"Decline", f:s=>{s.heat+=4;return "\"Declined to comment\" looks bad in print.";}}]},
+  {t:"Your accountant has questions", when:s=>s.week>5&&!has(s,"cfo"), b:()=>"He says the numbers don't add up.", ch:[
+    {l:"Give him a big raise", cost:s=>Math.max(20e3,s.owed*0.005), f:()=>"He stops asking."},
+    {l:"Fire him", f:s=>{s.heat+=10;return "He leaves with a box of files.";}}]},
+  {t:"The market crashes", when:s=>s.market!=="bust", b:()=>"Every investor in the country is nervous.", ch:[
+    {l:"Hold steady", f:s=>{s.market="bust";s.trust-=15;return "Your phones ring all week.";}},
+    {l:"Pay a loyalty bonus", cost:s=>Math.max(10e3,s.owed*0.02), f:s=>{s.market="bust";s.trust+=6;s.heat+=2;return "Your fund seems crash-proof. Suspiciously so.";}}]},
+  {t:"A celebrity offers an endorsement", b:s=>`A reality TV star will promote ${FUND} for ${fmt(Math.max(50e3,s.owed*0.02))}.`, ch:[
+    {l:"Sign the deal", cost:s=>Math.max(50e3,s.owed*0.02), f:s=>{const d=Math.max(50e3,s.owed*0.02)*4*rand(0.6,1.6),n=Math.round(d/(5e3*(1+0.04*s.week)));s.cash+=d;s.owed+=d;s.investors+=n;s.heat+=6;return `${num(n)} fans invest ${fmt(d)}.`;}},
+    {l:"Pass", f:()=>"They promote a crypto coin instead."}]},
+  {t:"A letter from the regulator", when:s=>s.heat>20, b:()=>"A routine request for your filings.", ch:[
+    {l:"Send forged documents", f:s=>{if(Math.random()<0.7){s.heat-=6;return "They file it away.";}s.heat+=20;return "Someone noticed the font changes halfway down the page.";}},
+    {l:"Ignore it", f:s=>{s.heat+=10;return "A second letter arrives. It's less polite.";}}]},
+  {t:"An angry thread goes viral", when:s=>s.investors>50, b:()=>"An investor's spouse is calling you a fraud online.", ch:[
+    {l:"Pay them to delete it", cost:s=>Math.max(10e3,s.owed*0.003), f:s=>{s.heat-=2;return "The thread disappears.";}},
+    {l:"Ignore it", f:s=>{s.trust-=8;s.heat+=5;return "A finance blog picks it up.";}}]},
+  {t:"A rival scheme collapses", b:()=>"Another fund just imploded on the evening news.", ch:[
+    {l:"Lie low", f:s=>{s.trust-=6;s.heat-=4;return "You cancel the yacht party.";}},
+    {l:"Say \"we're different\"", f:s=>{s.trust+=6;s.heat+=6;return "Investors believe you. Nobody at the SEC does.";}}]},
+  {t:"Your mom wants to invest", when:s=>!s.momDone, b:()=>"She wants to put in her retirement savings.", ch:[
+    {l:"Take her $40k", f:s=>{s.momDone=true;s.cash+=40e3;s.owed+=40e3;s.investors++;s.trust+=3;return "\"Even his own mother invests.\"";}},
+    {l:"Tell her the fund is full", f:s=>{s.momDone=true;return "She's offended. You feel something unfamiliar.";}}]},
+  {t:"A church group wants to invest", when:s=>s.week>4, b:s=>`150 members want to pool ${fmt(Math.max(200e3,s.owed*0.05))}.`, ch:[
+    {l:"Welcome them", f:s=>{const a=Math.max(200e3,s.owed*0.05);s.cash+=a;s.owed+=a;s.investors+=150;s.heat+=5;return "The pastor mentions you in his sermon.";}},
+    {l:"Decline", f:()=>"They thank you for your honesty."}]},
+  {t:"Your offshore bank flags transfers", when:s=>s.stash>50e3, b:()=>"Compliance wants to know where the money comes from.", ch:[
+    {l:"Pay a \"compliance fee\"", cost:s=>s.stash*0.05, from:"stash", f:()=>"The question goes away."},
+    {l:"Move it all to crypto", f:s=>{s.heat+=7;return "A blockchain analyst takes an interest.";}}]},
+  {t:"A whistleblower threatens to talk", when:s=>s.investors>200, b:()=>"A junior employee figured it out.", ch:[
+    {l:"Pay hush money", cost:s=>Math.max(25e3,s.stash*0.08), from:"stash", f:()=>"She signs an NDA and moves to Portugal."},
+    {l:"Call her bluff", f:s=>{if(Math.random()<0.5)return "She doesn't talk. Yet.";s.heat+=22;return "She talks.";}}]},
+  {t:"Tax audit", when:s=>s.week>6, b:()=>"The tax office wants to review last year.", ch:[
+    {l:"Hire a slick accountant", cost:s=>Math.max(15e3,s.owed*0.004), f:s=>{s.heat-=2;return "The audit finds nothing it can understand.";}},
+    {l:"Ignore it", f:s=>{s.heat+=12;return "The tax office shares notes with the regulator.";}}]},
+  {t:"A streaming producer wants to film you", when:s=>s.investors>300, b:()=>"A docuseries about \"the genius behind the returns.\"", ch:[
+    {l:"Roll the cameras", f:s=>{s.trust+=10;s.heat+=8;return "Episode one airs. Your smile is everywhere.";}},
+    {l:"Stay off camera", f:()=>"They make one about a crypto bro instead."}]},
+  {t:"An investor passed away", when:s=>s.investors>100, b:s=>`The heirs want the full ${fmt(Math.max(15e3,s.owed*0.01))} account paid out.`, ch:[
+    {l:"Pay the heirs", cost:s=>Math.max(15e3,s.owed*0.01), f:s=>{s.trust+=3;return "They send a thank-you card.";}},
+    {l:"Contest the will", f:s=>{s.heat+=8;s.trust-=4;return "Their lawyer subpoenas your statements.";}}]},
+  {t:"A copycat is using your name", when:s=>s.week>6, b:()=>`Someone is selling \"${FUND} Gold\" accounts online.`, ch:[
+    {l:"Sue them", cost:s=>Math.max(30e3,s.owed*0.005), f:s=>{s.trust+=4;return "The site goes dark. You look like the victim.";}},
+    {l:"Ignore it", f:s=>{s.trust-=6;s.heat+=3;return "Their victims start calling your office.";}}]},
+  {t:"Your bank is closing your account", when:s=>s.heat>30, b:()=>"\"We've reviewed our relationship.\" You have 10 days.", ch:[
+    {l:"Open accounts abroad", cost:s=>Math.max(40e3,s.owed*0.01), f:s=>{s.heat+=2;return "A bank in a small island nation is happy to help.";}},
+    {l:"Use cash couriers", f:s=>{const l=s.cash*0.05;s.cash-=l;s.heat+=6;return `One courier vanishes with ${fmt(l)}.`;}}]},
+  {t:"A councilman hints at a donation", b:()=>"He says he could \"keep people off your back.\"", ch:[
+    {l:"Donate generously", cost:s=>Math.max(50e3,s.owed*0.01), f:s=>{s.heat-=10;return "He shakes your hand at a ribbon cutting.";}},
+    {l:"Refuse", f:s=>{s.heat+=4;return "He asks the city to look into your permits.";}}]},
+  {t:"Your ex wants more alimony", when:s=>s.stash>30e3, b:()=>"They know about the offshore account.", ch:[
+    {l:"Pay up", cost:s=>Math.max(20e3,s.stash*0.1), from:"stash", f:()=>"They buy a boat. You try not to think about it."},
+    {l:"Refuse", f:s=>{if(Math.random()<0.4){s.heat+=15;return "They called a reporter.";}return "They grumble but stay quiet.";}}]},
+  {t:"A famous skeptic posts about you", when:s=>s.investors>500, b:()=>"A finance influencer calls your returns \"mathematically impossible.\"", ch:[
+    {l:"Threaten to sue", f:s=>{if(Math.random()<0.5){s.trust+=6;return "They delete the post and apologize.";}s.heat+=10;s.trust-=6;return "They post your cease-and-desist letter. It goes viral.";}},
+    {l:"Ignore it", f:s=>{s.heat+=5;s.trust-=5;return "The replies are not kind.";}}]},
+  {t:"Investors want an annual meeting", when:s=>s.investors>300, b:()=>"They'd like to see the fund's performance in person.", ch:[
+    {l:"Throw a lavish conference", cost:s=>Math.max(40e3,s.owed*0.01), f:s=>{s.trust+=12;return "Open bar, fireworks, and a slideshow with no numbers on it.";}},
+    {l:"Send a newsletter", f:s=>{s.trust-=4;return "Some investors call it \"vague.\"";}}]},
+  {t:"Angry investors demand a meeting", when:s=>s.trust<45, b:()=>"Two hundred people want answers.", ch:[
+    {l:"Promise higher returns", f:s=>{s.trust+=12;if(s.rate<RATES.length-1)s.rate++;s.heat+=3;return `You announce a new ${RATES[s.rate]*100}% monthly rate. Applause.`;}},
+    {l:"Skip it", f:s=>{s.trust-=10;return "They hold the meeting without you.";}}]},
+  {t:"A yacht is for sale", when:s=>s.stash>600e3&&!s.yacht, b:()=>"Sixty feet, fast, and fueled for open water.", ch:[
+    {l:"Buy it", cost:()=>500e3, from:"stash", f:s=>{s.yacht=true;s.heat+=4;s.trust+=5;return "Escape readiness up. Your investors see the photos and assume business is great.";}},
+    {l:"Pass", f:()=>"Some tech founder buys it."}]},
+  {t:"Old records in the basement", when:s=>s.week>8, b:()=>"Boxes of real numbers. The shredder is broken.", ch:[
+    {l:"Burn them tonight", f:s=>{if(Math.random()<0.7){s.heat-=8;return "Ashes in the alley. Nobody saw.";}s.heat+=18;return "A neighbor filmed you.";}},
+    {l:"Leave them", f:()=>"They'll keep. Probably."}]},
+  {t:"A foreign businessman wants to park money", b:s=>`He wants to invest ${fmt(Math.max(300e3,s.owed*0.08))} and asks no questions.`, ch:[
+    {l:"Take it", f:s=>{const a=Math.max(300e3,s.owed*0.08);s.cash+=a;s.owed+=a;s.investors++;s.heat+=10;return "The wire comes from three countries at once.";}},
+    {l:"Decline", f:()=>"He says he'll remember this."}]},
+  {t:"A new investor asks odd questions", when:s=>s.heat>30, b:()=>"He wants to know exactly where the returns come from. He's sweating.", ch:[
+    {l:"Take his $100k", f:s=>{s.cash+=100e3;s.owed+=100e3;s.investors++;if(Math.random()<0.5){s.heat+=15;return "He was wearing a wire.";}return "He was just nervous.";}},
+    {l:"Refuse his money", f:()=>"He leaves. A car picks him up outside."}]},
+  // Lieutenant events
+  {t:"A lieutenant wants a raise", when:s=>s.lts.length>0, lt:true, b:(s,c)=>`${lt(c).name} wants 50% more salary.`, ch:[
+    {l:"Give the raise", f:(s,c)=>{lt(c).raise*=1.5;lt(c).loyalty+=25;return `${lt(c).name} is happy.`;}},
+    {l:"Refuse", f:(s,c)=>{lt(c).loyalty-=20;return `${lt(c).name} goes quiet.`;}}]},
+  {t:"A lieutenant has been skimming from you", when:s=>s.lts.length>0, lt:true, b:(s,c)=>`${lt(c).name} took ${fmt(Math.max(10e3,s.owed*0.01))} from the fund.`, ch:[
+    {l:"Fire them", f:(s,c)=>{s.cash-=Math.max(10e3,s.owed*0.01);s.lts=s.lts.filter(x=>x!==lt(c));s.fired.push(lt(c));s.heat+=6;return `${lt(c).name} leaves angry.`;}},
+    {l:"Let it slide", f:(s,c)=>{s.cash-=Math.max(10e3,s.owed*0.01);lt(c).loyalty+=10;return `${lt(c).name} appreciates your understanding.`;}}]},
+  {t:"A lieutenant got arrested", when:s=>s.lts.length>0, lt:true, b:(s,c)=>`${lt(c).name} was picked up for drunk driving.`, ch:[
+    {l:"Post bail", cost:()=>25e3, f:(s,c)=>{lt(c).loyalty+=15;return `${lt(c).name} is grateful and hungover.`;}},
+    {l:"Leave them in there", f:(s,c)=>{lt(c).loyalty-=30;s.heat+=4;return `${lt(c).name} had a long night to think.`;}}]},
+  {t:"A lieutenant wants a cut", when:s=>s.lts.length>0&&s.stash>100e3, lt:true, b:(s,c)=>`${lt(c).name} knows about the stash and wants ${fmt(s.stash*0.05)}.`, ch:[
+    {l:"Pay them", cost:s=>s.stash*0.05, from:"stash", f:(s,c)=>{lt(c).loyalty+=30;return `${lt(c).name} is all in now.`;}},
+    {l:"Refuse", f:(s,c)=>{lt(c).loyalty-=25;return `${lt(c).name} says \"fine\" in a way you don't like.`;}}]},
+];
+let curEvent=null;
+function showEvent(){
+  const s=S, pool=EVENTS.filter(e=>!e.when||e.when(s));
+  const e=pick(pool);
+  curEvent={e,lt:e.lt?pick(s.lts):null};
+  modal(`<div class="tag">Month ${s.week}</div><h3>${e.t}</h3><p>${e.b(s,curEvent)}</p><div class="btns">${e.ch.map((c,i)=>{
+    const cost=c.cost?c.cost(s):0, from=c.from||"cash", ok=!cost||s[from]>=cost;
+    return `<button class="big ${i===0?"go":"alt"}" data-act="choose" data-v="${i}" ${ok?"":"disabled"}>${c.l}${cost?` · ${fmt(cost)}${from==="stash"?" from stash":""}`:""}</button>`;}).join("")}</div>`);
+}
+function resolveEvent(i){
+  const s=S, {e}=curEvent, c=e.ch[i], cost=c.cost?c.cost(s):0;
+  if(cost)s[c.from||"cash"]-=cost;
+  s.flags[e.t]=i;
+  s.notes.push(`<b>${e.t}.</b> ${c.f(s,curEvent)}`);
+  curEvent=null; closeModal(); raidCheck();
+}
+
+// ---------- UI plumbing ----------
+function modal(html,cls){const c=document.getElementById("card");c.className="card"+(cls?" "+cls:"");c.innerHTML=html;document.getElementById("modal").hidden=false;c.scrollTop=0;}
+function closeModal(){document.getElementById("modal").hidden=true;}
+const modalOpen=()=>!document.getElementById("modal").hidden;
+const ACT={
+  rate:v=>{S.rate=+v;render();},
+  mkt:v=>{S.mkt=+v;render();},
+  cover:v=>{S.cover=v;render();},
+  buy:v=>{const p=PREP.find(x=>x.id===v);if(S.prep[v]||S.stash<p.cost)return;S.stash-=p.cost;S.prep[v]=true;if(p.heat)S.heat=clamp(S.heat+p.heat,0,100);S.notes.push(`You bought: ${p.name}.`);render();showPlan();},
+  hire:v=>{if(S.lts.length>=MAX_LTS||has(S,v))return;const c=S.candidates.find(x=>x.role===v);S.lts.push({role:v,name:c.name,raise:1,loyalty:Math.round(rand(55,80))});S.notes.push(`You hired ${c.name} as ${role(v).title}.`);render();showCrew();},
+  fire:v=>{const l=S.lts.find(x=>x.role===v);if(!l)return;S.lts=S.lts.filter(x=>x!==l);S.fired.push(l);S.heat=clamp(S.heat+(l.loyalty<50?6:2),0,100);
+    const used=new Set([...S.lts.map(x=>x.name),...S.candidates.map(x=>x.name)]);const nm=NAMES.find(n=>!used.has(n))||l.name;
+    S.candidates=S.candidates.map(c=>c.role===v?{role:v,name:nm}:c);S.notes.push(`You fired ${l.name}. They took their keycard with them.`);render();showCrew();},
+  bonus:v=>{const l=S.lts.find(x=>x.role===v);if(!l)return;const b=salary(S,l)*4;if(S.cash<b)return;S.cash-=b;l.loyalty=clamp(l.loyalty+20,0,100);S.notes.push(`${l.name} got a ${fmt(b)} bonus.`);render();showCrew();},
+  paper:()=>showGazette(),
+  report:()=>showReport(),
+  crew:()=>showCrew(),
+  plan:()=>showPlan(),
+  help:()=>showHelp(),
+  book:()=>showBook(),
+  story:()=>showStory(),
+  life:()=>showLife(),
+  buylife:v=>buyLife(v),
+  snd:()=>{setSound(!SND.on);render();},
+  pitch:()=>showPitch(),
+  dopitch:v=>doPitch(+v),
+  speech:v=>doSpeech(+v),
+  bullpen:()=>renderBullpen(),
+  rankinfo:()=>showRankInfo(),
+  risk:v=>doRisk(+v),
+  riskskip:()=>closeModal(),
+  raidrun:()=>{stopRaid();attemptEscape(S.prep.jet?5:20,"raid");},
+  raidgrab:()=>{const s=S;if(s.raidGrab)return;const amt=Math.max(0,Math.round(s.cash*0.5));s.cash-=amt;s.stash+=amt;s.raidGrab=true;s.raidT-=4;play("coins");raidModal();},
+  raidgive:()=>{stopRaid();ending("caught",null,"surrender");},
+  end:()=>{if(!modalOpen())startDesk();},
+  dchk:v=>deskCheck(v),
+  ddec:v=>deskDecide(v),
+  dopt:v=>{const [f,o]=v.split(":").map(Number);S.desk.q[S.desk.i].fields[f].pick=o;renderDesk();},
+  dclose:()=>{S.desk=null;endWeek();},
+  run:()=>{if(!modalOpen())confirmRun();},
+  flee:v=>{if(+v===0)beginRun();else attemptEscape(+v);},
+  staydeal:()=>stayDeal(),
+  startnight:()=>startNight(false),
+  nightcollapse:()=>startNight(true),
+  nightpick:v=>nightPick(+v),
+  caught:()=>ending("caught",null,"surrender"),
+  close:()=>closeModal(),
+  choose:v=>resolveEvent(+v),
+  restart:()=>{stopRaid();stopNight();S=newGame();shown=null;closeModal();render();window.scrollTo(0,0);showGazette();},
+};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b||b.disabled)return;ACT[b.dataset.act]?.(b.dataset.v);});
+
+if(typeof window.claude?.hot?.snapshot==="function")window.claude.hot.snapshot(()=>({S}));
+const start=d=>{S=d&&d.S&&d.S.gazette?Object.assign(newGame(),d.S):newGame();if(S.desk)renderDesk();else render();if(!(d&&d.S))showGazette();};
+window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+</script>
+</body>
+</html>

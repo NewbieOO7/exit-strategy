@@ -1,0 +1,260 @@
+0	Word of	Kulaktan kulağa
+1	Free. Relies	Bedava. Mevcut yatırımcılarına bağlı.
+2	Flyers &	Broşür ve kahve buluşmaları
+3	Free-lunch	Bedava öğle yemekli seminerler
+4	Radio ads	Radyo reklamları
+5	TV &	TV ve fenomenler
+6	Global	Küresel kampanya
+7	None	Yok
+8	Nothing this	Bu ay hiçbir şey
+9	Audit	Denetim
+10	Fake audit	Sahte denetim
+11	Calms things	Ortalığı yatıştırır, güven biraz artar.
+12	Gala	Gala
+13	Charity	Hayır galası
+14	Trust up	Güven artar, ortalık biraz yatışır.
+15	Bribe	Rüşvet
+16	Bribe a	Bir denetçiye rüşvet
+17	Calms things	Ortalığı epey yatıştırır. Ters tepebilir.
+18	Fake passport	Sahte pasaport
+19	Better escape	Kaçış şansı artar
+20	Offshore	Yurt dışında paravan şirketler
+21	Keep your	Kaçarken kasanın tamamı seninle gelir (yoksa %60'ı). Kâr çalmak daha az dikkat çeker.
+22	Villa in	Suçluların iade edilmediği bir ülkede villa
+23	Much better	Kaçış şansı çok artar
+24	Private jet	Hazırda bekleyen özel jet
+25	Much better	Şansın çok artar. Baskın sırasında kaçmayı denemeni sağlar.
+26	Creative CFO	Yaratıcı Finans Müdürü
+27	Cooks the	Defterleri pişirir. Büyüme ve kâr çalmak %30 daha az dikkat çeker.
+28	Marketing	Pazarlama Müdürü
+29	30% more	Her ay %30 daha fazla yeni yatırımcı.
+30	Shark Lawyer	Köpekbalığı Avukat
+31	Raids are	Baskın ihtimali azalır, gelirse de 10 yerine 15 saniyen olur.
+32	Inside Source	İçerideki Kaynak
+33	A detective	Maaş bordrondaki bir dedektif. Günde bir bedava sicil araştırması ve kara listene erken sayfalar. Arada bir ihbar, her zaman doğru değil.
+34	PR Chief	Halkla İlişkiler Şefi
+35	Keeps investor	Yatırımcı güveninin düşmesini engeller. Her ay küçük bir destek.
+36	Smuggler	Kaçakçı
+37	Knows the	Kaçış yollarını bilir. Kaçışa hazırlığını çok artırır.
+38	Rule one	Birinci kural: paraya asla hayır deme.
+39	You rent	Küçük bir ofis kiralıyor, kartvizit bastırıyorsun.
+40	opens Monday	 pazartesi kapılarını açıyor.
+41	Nobody's	Kimse bakmıyor
+42	Some online	İnternette biraz dedikodu
+43	A reporter	Bir muhabir eşeleniyor
+44	Regulators	Denetçiler dosya açtı
+45	Federal	Federal soruşturma
+46	Agents are	Ajanlar yaklaşıyor
+47	Devoted	Bağlı
+48	Confident	Emin
+49	Uneasy	Tedirgin
+50	Nervous	Gergin
+51	Panicking	Panikte
+52	Loyal	Sadık
+53	Restless	Huzursuz
+54	Shifty	Sinsi
+55	Regulator Pruitt	Denetçi Pruitt
+56	Inspector Dorsey	Müfettiş Dorsey
+57	Examiner Vance	Denetmen Vance
+58	Deputy	Komiser Yardımcısı Kemp
+59	Auditor	Denetçi Lindqvist
+60	Poor	Zayıf
+61	Fair	İdare eder
+62	Good	İyi
+63	Strong	Güçlü
+64	Excellent	Mükemmel
+65	SEC budget	SEC bütçesi yine kısıldı
+66	Regulators say	Denetçiler bu yıl büyük bankalara odaklanacaklarını söylüyor.
+67	sponsors	{0} çocuk beyzbol takımına sponsor oldu
+68	The Ashford	Ashford Otters'a yeni formalar.
+69	Local investors	Yerel yatırımcılar rekor bir yıl geçiriyor
+70	Advisers	Danışmanlar müşterilerin "hiç olmadığı kadar mutlu" olduğunu söylüyor.
+71	Regulators buried	Denetçiler banka birleşmesi incelemelerine gömüldü
+72	Staff call	Personel birikmiş işler için "tarihî" diyor.
+73	Forum users	Forum kullanıcıları "gerçek olamayacak kadar iyi" getirileri tartışıyor
+74	An anonymous	Anonim bir kullanıcı beş yerel fonu sıraladı. Seninki dördüncü.
+75	Columnist	Köşe yazarı: "garantili" getirilere dikkat
+76	If a fund	"Bir fonun hiç kötü haftası olmuyorsa, nedenini sorun."
+77	Finance podcast	Finans podcast'i küçük fonlar hakkında telefon alıyor
+78	One caller	Arayanlardan biri "ağaç logolu" bir fonu soruyor.
+79	Better Business	Tüketici derneğine yeni şikâyetler
+80	Most concern	Çoğu bir çatı firmasıyla ilgili. Birkaçı değil.
+81	Business Weekly	Business Weekly ifşa haberi hazırlıyor, kaynaklar böyle diyor
+82	The magazine	Dergi birkaç fonun eski çalışanlarını arıyor.
+83	Reporter spotted	Muhabir ilçe tapu ve sicil dairesinde görüldü
+84	She requested	{0} merkezli üç firmanın kayıtlarını istedi.
+85	Analyst	Analist: hiçbir gerçek fon ayda %{pct} ödemez
+86	That's not	"Bu yatırım değil. Bu aritmetik."
+87	Former fund	Eski fon çalışanından şifreli blog yazısı
+88	Some of us	"Bazılarımız biliyordu. Bir şey söylemeliydik."
+89	SEC opens	SEC adı açıklanmayan bölgesel bir fon hakkında inceleme başlattı
+90	The agency	Kurum firmanın adını vermedi.
+91	Regulators subpoena	Denetçiler {0} bankalarının kayıtlarını celp etti
+92	Three local	Bu ay üç yerel bankaya talep geldi.
+93	Attorney general	Başsavcılık dolandırıcılık görev gücü kurdu
+94	First target	İlk hedef: "olağandışı istikrarlı getirisi olan fonlar."
+95	Auditors warn	Denetim firmaları sahte onaylara karşı uyarıyor
+96	A memo cites	Bir yazıda "antetli kâğıdımızı kullanan yerel bir fon"dan söz ediliyor.
+97	FBI adds	FBI, {0:dat} beyaz yaka ajanları gönderiyor
+98	The bureau	Büro bu adımın "belirli bir davayla ilgisi olmadığını" söylüyor.
+99	Grand jury	Büyük jüri gizli bir mali dava için toplandı
+100	Witnesses include	Tanıklar arasında birkaç banka çalışanı var.
+101	Banks told	Bankalara yerel fonlardan yurt dışına giden havaleleri işaretleme talimatı
+102	A compliance	Salı günü bir uyum genelgesi yayımlandı.
+103	Former fund	Eski fon çalışanları federal binaya girerken görüldü
+104	Two arrived	İkisi avukatlarıyla geldi.
+105	Sources arrests	Kaynaklar: büyük dolandırıcılık soruşturmasında tutuklamalar yakın
+106	Days not	"Haftalar değil, günler," dedi bir yetkili.
+107	Judge signs	Hâkim cuma akşamı gizli tutuklama kararları imzaladı
+108	The clerk's	Kalem erken kapandı.
+109	Airport police	Havalimanı polisine güncel izleme listesi ulaştı
+110	Officials would	Yetkililer listeye kimin eklendiğini söylemedi.
+111	Federal agents	Federal ajanlar yerel fonun karşısında ofis kiraladı
+112	The landlord	Ev sahibi bir yıllık kirayı peşin ödediklerini söylüyor.
+113	Nobody downtown	Şehirde kimse adını duymadı.
+114	A few people	Birkaç kişi internette söyleniyor. Resmî kimse umursamıyor.
+115	A reporter has	Bir muhabir seni soruşturuyor. Henüz polis yok.
+116	The regulators	Denetçilerin elinde üstünde senin adın yazan bir dosya var.
+117	The feds	Federallerin açık bir davası var. Sen de içindesin.
+118	Warrants are	Tutuklama kararları hazırlanıyor. Kaç.
+119	SEC cracks	SEC kripto borsalarına yükleniyor
+120	Three exchanges	Üç borsaya ceza. Yerel firma adı geçmiyor.
+121	FBI busts	FBI başka bir eyalette konut kredisi dolandırıcılığı çetesini çökertti
+122	Twelve arrested	1.500 kilometre ötede on iki gözaltı.
+123	Golden Horizon	Golden Horizon Fund'ın kurucusuna 40 yıl
+124	The judge called	Hâkim "ders kitabı gibi bir piramit" dedi.
+125	Congress debates	Kongre daha sert dolandırıcılık yasalarını tartışıyor
+126	The bill	Tasarının bu yıl geçmesi beklenmiyor.
+127	Bank teller	Bahşiş kavanozunu soyan banka veznedarı tutuklandı
+128	Police call	Polis olayı "yılın en küçük soygunu" diye niteledi.
+129	Investment-fraud	Yatırım dolandırıcılığı belgeseli dizi listelerinin zirvesinde
+130	Viewers call	İzleyiciler "inanılmaz" diyor.
+131	Regulators promise	Denetçiler "yeni bir yaptırım dönemi" sözü veriyor
+132	They said	Geçen yıl da aynısını söylemişlerdi.
+133	Otters win	Otters uzatmada kazandı
+134	The Little	Çocuk beyzbol takımı hâlâ yenilgisiz.
+135	Heat wave	Hafta sonu boyunca sıcak hava dalgası bekleniyor
+136	Officials urge	Yetkililer halkı bol su içmeye çağırıyor.
+137	Mayor opens	Belediye başkanı yeni otoparkı açtı
+138	It has 400	400 araçlık yer, tek asansör.
+139	Local bakery	Yerel fırına bölgesel kruvasan ödülü
+140	City council	Belediye meclisi bisiklet yolu oylamasını yine erteledi
+141	Escaped llama	Kaçan lama kütüphane otoparkında sağ salim bulundu
+142	Celebrity chef	Ünlü şef şehir merkezinde steakhouse açtı
+143	Booked solid	Bahara kadar tüm masalar dolu.
+144	Fog delays	Sis yüzünden vapur seferleri gecikti
+145	Commuters bring	Yolcular yanlarına fazladan kahve alıyor.
+146	Markets roar	Piyasalar rekor zirvelere koşuyor
+147	Everyone wants	Herkes pastadan pay istiyor.
+148	Bull market	Boğa piyasası üçüncü ayına girdi
+149	Brokers report	Aracı kurumlarda yeni müşteri kuyrukları.
+150	Markets flat	Piyasalar hafta boyunca yatay
+151	Analysts call	Analistler "iyi anlamda sıkıcı" diyor.
+152	Interest rates	Faiz oranları değişmedi
+153	The central	Merkez bankası "istikrarlı koşullar" görüyor.
+154	Stocks tumble	Hisseler resesyon korkusuyla çakıldı
+155	Savers are	Birikimciler parasını her yerden çekiyor.
+156	Layoffs spread	Piyasalar düşerken işten çıkarmalar yayılıyor
+157	Households are	Haneler kemerleri sıkıyor.
+158	passes 100	{0} 100 yatırımcıyı geçti
+159	Word of mouth	"Kulaktan kulağa yayılmak çok güzel bir şey," diyor kurucu.
+160	passes 1000	{0} 1.000 yatırımcıyı geçti
+161	Founder calls	Kurucu buna "daha başlangıç" diyor.
+162	now has	{0} artık 10.000 yatırımcıya sahip
+163	Its seminars	Seminerleri Otters maçlarından kalabalık.
+164	tops 10	{0} 10 milyon doları aştı
+165	Local fund	Yerel fon ulusal ortalamaları geride bıraktı.
+166	100 million	{0}: 100 milyon dolar ve artıyor
+167	Rivals say	Rakipler "stratejiyi çözemediklerini" söylüyor.
+168	joins the	{0} milyar dolarlık kulübe katıldı
+169	Founder rings	Kurucu bölgesel borsada açılış zilini çaldı.
+170	pct	{pct}
+171	Insider at	Adı açıklanmayan fondan bir içerdeki savcılarla konuşuyormuş
+172	Sources describe	Kaynaklar o kişiyi "üst düzey çalışan" olarak tanımlıyor.
+173	CFO	Finans
+174	Marketing	Pazarlama
+175	Lawyer	Avukat
+176	Source	Kaynak
+177	PR	Hİ
+178	Mute sound	Sesi kapat
+179	Turn sound	Sesi aç
+180	On	♪ Açık
+181	Off	♪ Kapalı
+182	Last month	Geçen ay
+183	Welcome	Hoş geldin
+184	Nobody has	Henüz kimse seni duymadı.
+185	Nothing else	Bildirilecek başka bir şey yok.
+186	a month	 / ay
+187	Free	Bedava
+188	a month	Ayda {0}
+189	Nobody yet	Henüz kimse yok
+190	to you	{0} sana
+191	Nothing	Hiçbir şey
+192	Week	Ofiste {0}. hafta
+193	Owned	Sende var
+194	You couldn't	Maaşları ödeyemedin. Adamların bunu fark etti.
+195	You missed	{0:gen} ödemesini kaçırdın. {1} telefonlarını açmayı bıraktı.
+196	The audit	Denetim raporu kimseyi rahatlatmadı. Tam tersi.
+197	A respectable	Saygın görünümlü bir firma defterlerini onayladı.
+198	Your gala	Galan gazetelere çıktı. Çoğunlukla şampanya kulesinin fotoğraflarıyla.
+199	Your charity	Hayır galan cemiyet sayfalarında.
+200	The regulator	Rüşvet vermeye çalıştığın denetçi seni ihbar etti.
+201	Another	Başka bir denetçi
+202	A regulator	Bir denetçi dosyanı sessizce "kaybetti". {0} artık her ay {1} "danışmanlık ücreti" bekliyor.
+203	You missed	{0} ödemeyi kaçırdın. Yatırımcılar ofisi arıyor.
+204	Repo men	Haciz memurları geldi ve {0} gitti. Güpegündüz, herkesin gözü önünde.
+205	stopped coming	{0} işe gelmeyi bıraktı. Masası boşaltılmış.
+206	You have the	{0} olacak paran var ama henüz öyle görünmüyorsun. (İmaj {1}/{2}. Kasana dokun.)
+207	40 gets	 (paravan şirket yoksa %40'ı dondurulur)
+208	You got away	Kaçmayı başardın
+209	Caught	Yakalandın
+210	founder vanishes	{0} kurucusu ortadan kayboldu; {1} kayıp
+211	Where is	{0:gen} kurucusu nerede?
+212	offices found	{0} ofisleri bomboş bulundu, bir eğrelti otu hariç
+213	founder caught	{0} kurucusu kaçarken yakalandı
+214	Fund boss	Fon patronu kaçarken enselendi
+215	founder's getaway	{0} kurucusunun kaçışı erken bitti
+216	Federal agents	Federal ajanlar {0} ofislerine baskın yaptı
+217	founder in	{0} kurucusu kelepçeli
+218	Nothing but	"Hep kazanç, sıfır risk": {0} kurucusu tutuklandı
+219	Dentist	Diş hekimi
+220	Orthopedic	Ortopedi cerrahı
+221	Car dealer	Oto galerici
+222	Retired pilot	Emekli pilot
+223	Restaurant	Restoran sahibi
+224	Real estate	Emlakçı
+225	Software	Yazılım mühendisi
+226	Retiree	Emekli
+227	Living off	Birikimleriyle geçiniyor
+228	Plastic	Estetik cerrahı
+229	Freelance	Serbest fotoğrafçı
+230	Self-employed	Serbest meslek
+231	Accountant	Muhasebeci
+232	Retired judge	Emekli hâkim
+233	State pension	Devlet emekli maaşı
+234	Management	Yönetim danışmanı
+235	Cashier's	Banka çeki
+236	Wire	Havale
+237	Personal	Şahsi çek
+238	My brother-in-law	Eniştem sizden bahsetmeden duramıyor.
+239	I just want	Emeklilik için istikrarlı bir şey istiyorum, o kadar.
+240	Is it true	Hiç kötü ayınız olmadığı doğru mu?
+241	My financial	Mali danışmanım çok kıskanacak.
+242	How soon	Ne zaman daha fazla ekleyebilirim?
+243	Can I bring	Bir dahaki sefere muhasebecimi getirebilir miyim?
+244	Where do	Getiriler kabaca nereden geliyor?
+245	I'm a big	İstikrarlı getiriye çok inanırım.
+246	Would you	Stratejiyi bana bir anlatır mısınız?
+247	How many	Kaç yatırımcınız var, aşağı yukarı?
+248	I'd love	Mümkünse yakın tarihli bir hesap özeti görmek isterim.
+249	Do you keep	Parayı burada mı tutuyorsunuz, yurt dışında mı?
+250	Mind if	Birkaç not alsam sakıncası var mı? Her şeyi kayıt altında tutmayı severim.
+251	a friend	bir arkadaş
+252	a flyer	bir broşür
+253	your seminar	seminer kayıt listen
+254	your radio	radyo reklamın
+255	your TV	TV reklamın
+256	your global	küresel kampanyan
+257	The name	Kimlikteki ad, başvurudakiyle birebir aynı olmalı.
+258	Check the ID's	Kimliğin son geçerlilik tarihini bugünün tarihiyle karşılaştır. Gerçek insanlar kimliğini yeniler. Paravan kimlikler özensiz olur.
+259	The birth year	Kimlikteki doğum yılı formdaki yaşa uymalı. Bu yıl eksi doğum yılı, bir yaş artı eksi.

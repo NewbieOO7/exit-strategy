@@ -1,0 +1,382 @@
+<title>Ponzi Run</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<style>
+/* Layout: one mobile column — status up top, weekly decisions stacked, action bar pinned to the bottom. Single dark look by choice. */
+:root{
+  --bg:#0f1512; --panel:#17201b; --panel2:#1e2a23; --line:#2b3a31; --fg:#e8efe9; --muted:#8fa497;
+  --money:#5fd48a; --gold:#e9c46a; --danger:#ff6b5b; --warn:#f4a259;
+  --display:"Archivo Black", Impact, "Arial Black", sans-serif;
+  --body:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.4}
+.wrap{max-width:520px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 130px;display:flex;flex-direction:column;gap:14px}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+h1{font-family:var(--display);font-size:22px;margin:0;letter-spacing:.5px}
+h1 small{font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:500;margin-left:6px}
+.week{font-family:var(--display);font-size:20px;color:var(--gold)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.stat .v{font-family:var(--mono);font-size:20px;font-variant-numeric:tabular-nums;margin-top:2px}
+.v.money{color:var(--money)} .v.gold{color:var(--gold)} .v.neg{color:var(--danger)}
+.meter{display:flex;flex-direction:column;gap:4px}
+.meter .row{display:flex;justify-content:space-between;font-size:13px}
+.meter .row b{font-weight:600}
+.bar{height:10px;background:var(--panel2);border-radius:5px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:5px;transition:width .4s}
+.heat i{background:linear-gradient(90deg,var(--warn),var(--danger));filter:blur(1.5px)}
+.trust i{background:var(--money)}
+section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+section h2{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:0;font-weight:600}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button,.opt{font:inherit;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;cursor:pointer}
+.seg button{flex:1;min-width:52px;font-family:var(--mono)}
+.seg button.on,.opt.on{border-color:var(--gold);background:#2c2a1a;color:var(--gold)}
+button:disabled{opacity:.35;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;justify-content:space-between;gap:10px;text-align:left;align-items:center}
+.opt .nm{min-width:0}
+.opt .nm small{display:block;color:var(--muted);font-size:12px}
+.opt .c{font-family:var(--mono);font-size:13px;white-space:nowrap}
+.opt.owned{border-style:dashed;cursor:default}
+input[type=range]{width:100%;accent-color:var(--gold)}
+.skimrow{display:flex;justify-content:space-between;font-family:var(--mono);font-size:14px}
+.report{font-size:14px;display:flex;flex-direction:column;gap:4px}
+.report .ln{display:flex;justify-content:space-between;gap:10px;font-variant-numeric:tabular-nums}
+.report .ln span:last-child{font-family:var(--mono)}
+.news{border-left:3px solid var(--warn);padding-left:8px;font-size:13px;color:var(--fg)}
+.forecast{font-size:13px;display:flex;flex-direction:column;gap:3px}
+.warn{color:var(--warn)} .bad{color:var(--danger)} .good{color:var(--money)}
+.actionbar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.actionbar .in{max-width:520px;margin:0 auto;display:flex;gap:10px}
+.big{font:inherit;font-family:var(--display);font-size:16px;border:none;border-radius:9px;padding:14px;cursor:pointer;letter-spacing:.5px}
+.big.go{flex:2;background:var(--money);color:#0b1a10}
+.big.run{flex:1;background:var(--danger);color:#1d0806}
+.big.alt{background:var(--panel2);color:var(--fg);border:1px solid var(--line)}
+.modal{position:fixed;inset:0;background:rgba(5,8,6,.82);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));z-index:20}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;max-width:440px;width:100%;display:flex;flex-direction:column;gap:12px;max-height:100%;overflow:auto}
+.card h3{font-family:var(--display);font-size:20px;margin:0;text-wrap:balance}
+.card p{margin:0}
+.card .btns{display:flex;flex-direction:column;gap:8px}
+.card .btns .big{width:100%}
+.card .tag{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.headline{font-family:var(--display);font-size:17px;background:var(--fg);color:var(--bg);padding:10px 12px;border-radius:4px;text-wrap:balance}
+.endstats{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px}
+.endstats span:nth-child(even){font-family:var(--mono);text-align:right}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+
+<div class="wrap" id="app"></div>
+<div class="actionbar"><div class="in">
+  <button class="big run" id="runBtn" data-act="run">Run</button>
+  <button class="big go" data-act="end">End week →</button>
+</div></div>
+<div class="modal" id="modal" hidden><div class="card" id="card"></div></div>
+
+<script>
+const VERSION = "1.0";
+const FUND = "Evergreen Capital";
+const RATES = [0.01, 0.02, 0.03, 0.05, 0.08];
+const APPEAL = [0.5, 0.8, 1.0, 1.3, 1.6];
+const MKT = [
+  {name:"Word of mouth", cost:0, leads:0, heat:0, desc:"Free. Relies on existing investors."},
+  {name:"Flyers & coffee meetings", cost:2e3, leads:5, heat:0},
+  {name:"Free-lunch seminars", cost:15e3, leads:25, heat:0.2},
+  {name:"Radio ads", cost:60e3, leads:90, heat:0.8},
+  {name:"TV & influencers", cost:250e3, leads:350, heat:1.8},
+  {name:"Global campaign", cost:1e6, leads:1400, heat:3.5},
+];
+const COVERS = [
+  {id:"none", name:"Nothing this week", desc:"", cost:()=>0},
+  {id:"audit", name:"Fake audit", desc:"Heat down, trust up a little", cost:o=>Math.max(25e3, o*0.01)},
+  {id:"gala", name:"Charity gala", desc:"Trust up, heat down a little", cost:o=>Math.max(20e3, o*0.006)},
+  {id:"bribe", name:"Bribe a regulator", desc:"Big heat drop. Can backfire.", cost:o=>Math.max(50e3, o*0.02)},
+];
+const PREP = [
+  {id:"passport", name:"Fake passport", cost:40e3, odds:15, desc:"Better escape odds"},
+  {id:"shells", name:"Offshore shell companies", cost:150e3, odds:5, desc:"Keep your whole stash when you flee (otherwise 60%). Skimming draws less heat."},
+  {id:"villa", name:"Villa in a non-extradition country", cost:750e3, odds:20, heat:3, desc:"Much better escape odds"},
+  {id:"jet", name:"Private jet on standby", cost:3e6, odds:20, heat:2, desc:"Much better odds. Lets you try to flee during a raid."},
+];
+
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const rand=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function fmt(n){const a=Math.abs(n),s=n<0?"−":"";
+  if(a>=1e9)return s+"$"+(a/1e9).toFixed(2)+"B";
+  if(a>=1e6)return s+"$"+(a/1e6).toFixed(a>=1e8?0:1)+"M";
+  if(a>=1e3)return s+"$"+(a/1e3).toFixed(a>=1e5?0:1)+"k";
+  return s+"$"+Math.round(a);}
+const num=n=>Math.round(n).toLocaleString("en-US");
+
+let S;
+function newGame(){return {week:1,cash:25e3,owed:0,investors:0,stash:0,heat:0,trust:70,rate:1,mkt:2,cover:"none",skim:0,
+  prep:{},missed:0,peakOwed:0,peakInv:0,totalSkim:0,momDone:false,report:null,notes:["You rent a small office and print business cards. "+FUND+" opens Monday."]};}
+
+function heatLabel(h){return h<15?"Nobody's looking":h<35?"Some online chatter":h<55?"A reporter is digging":h<75?"Regulators opened a file":h<90?"Federal investigation":"Agents are closing in";}
+function trustLabel(t){return t>=75?"Devoted":t>=50?"Confident":t>=30?"Uneasy":t>=15?"Nervous":"Panicking";}
+function withdrawFrac(s){const r=RATES[s.rate];const panic=s.trust<40?(40-s.trust)/40*0.15:0;return 0.02+0.5*r+panic;}
+function raidChance(h){return h<35?0:Math.pow((h-35)/65,2)*0.4;}
+function escapeOdds(s,pen=0){let o=20-pen;for(const p of PREP)if(s.prep[p.id])o+=p.odds;o-=s.heat*0.3;return clamp(Math.round(o),5,95);}
+const approx=o=>Math.round(o/5)*5;
+const keepShare=s=>s.prep.shells?1:0.6;
+const coverCost=s=>COVERS.find(c=>c.id===s.cover).cost(s.owed);
+
+// Drop selections the player can no longer afford.
+function fixSelections(){
+  if(MKT[S.mkt].cost>S.cash){let i=S.mkt;while(i>0&&MKT[i].cost>S.cash)i--;S.mkt=i;}
+  if(coverCost(S)>S.cash-MKT[S.mkt].cost)S.cover="none";
+}
+
+function render(){
+  fixSelections();
+  const s=S, r=RATES[s.rate];
+  const mktCost=MKT[s.mkt].cost, cvCost=coverCost(s);
+  const rep=s.report;
+  let h=`<header><h1>PONZI RUN<small>v${VERSION}</small></h1><div class="week">Week ${s.week}</div></header>
+  <div class="stats">
+    <div class="stat"><div class="k">Fund cash</div><div class="v ${s.cash<0?"neg":"money"}">${fmt(s.cash)}</div></div>
+    <div class="stat"><div class="k">Owed to investors</div><div class="v">${fmt(s.owed)}</div></div>
+    <div class="stat"><div class="k">Investors</div><div class="v">${num(s.investors)}</div></div>
+    <div class="stat"><div class="k">Your offshore stash</div><div class="v gold">${fmt(s.stash)}</div></div>
+  </div>
+  <div class="meter"><div class="row"><span>Heat</span><b class="${s.heat>=55?"bad":s.heat>=35?"warn":""}">${heatLabel(s.heat)}</b></div><div class="bar heat"><i style="width:${s.heat}%"></i></div></div>
+  <div class="meter"><div class="row"><span>Investor trust</span><b class="${s.trust<30?"bad":s.trust<50?"warn":"good"}">${trustLabel(s.trust)}</b></div><div class="bar trust"><i style="width:${s.trust}%"></i></div></div>`;
+
+  h+=`<section><h2>${rep?"Last week":"Welcome"}</h2><div class="report">`;
+  if(rep){
+    h+=`<div class="ln"><span>New investors</span><span>+${num(rep.newInv)}</span></div>
+    <div class="ln"><span>Deposits in</span><span class="good">+${fmt(rep.dep)}</span></div>
+    <div class="ln"><span>Payouts made</span><span class="${rep.paid<rep.due*0.999?"bad":""}">−${fmt(rep.paid)} of ${fmt(rep.due)}</span></div>
+    <div class="ln"><span>Spending</span><span>−${fmt(rep.spend)}</span></div>
+    ${rep.skim?`<div class="ln"><span>Skimmed to your stash</span><span class="good">+${fmt(rep.skim)}</span></div>`:""}
+    ${rep.left?`<div class="ln"><span>Investors who cashed out and left</span><span>−${num(rep.left)}</span></div>`:""}`;
+  }
+  for(const n of s.notes)h+=`<div class="news">${n}</div>`;
+  h+=`</div></section>`;
+
+  h+=`<section><h2>Promised weekly return</h2><div class="seg">${RATES.map((x,i)=>`<button data-act="rate" data-v="${i}" class="${i===s.rate?"on":""}">${x*100}%</button>`).join("")}</div>
+  <p class="hint">Higher returns pull in more investors, but more of them cash out each week and the numbers start to look suspicious.</p></section>`;
+
+  h+=`<section><h2>Marketing</h2><div class="opts">${MKT.map((m,i)=>{
+    const dis=m.cost>s.cash-(i===s.mkt?0:0)-cvCost&&i!==s.mkt;
+    return `<button class="opt ${i===s.mkt?"on":""}" data-act="mkt" data-v="${i}" ${dis?"disabled":""}><span class="nm">${m.name}${m.desc?`<small>${m.desc}</small>`:""}</span><span class="c">${m.cost?fmt(m.cost)+"/wk":"Free"}</span></button>`;}).join("")}</div></section>`;
+
+  const maxSkim=Math.max(0,s.cash-mktCost-cvCost);
+  h+=`<section><h2>Skim to your stash</h2>
+  <input type="range" id="skim" min="0" max="50" step="5" value="${Math.round(s.skim*100)}" aria-label="Skim percentage">
+  <div class="skimrow"><span id="skimPct">${Math.round(s.skim*100)}% of cash</span><span id="skimAmt" class="good">${fmt(maxSkim*s.skim)}</span></div>
+  <p class="hint">Only your stash counts when you get away. Big transfers draw attention.</p></section>`;
+
+  h+=`<section><h2>Cover-up</h2><div class="opts">${COVERS.map(c=>{
+    const cost=c.cost(s.owed);const dis=c.id!==s.cover&&cost>s.cash-mktCost;
+    return `<button class="opt ${c.id===s.cover?"on":""}" data-act="cover" data-v="${c.id}" ${dis?"disabled":""}><span class="nm">${c.name}${c.desc?`<small>${c.desc}</small>`:""}</span><span class="c">${cost?fmt(cost):""}</span></button>`;}).join("")}</div></section>`;
+
+  h+=`<section><h2>Escape plan · odds about ${approx(escapeOdds(s))}%</h2><div class="opts">${PREP.map(p=>{
+    const own=s.prep[p.id];
+    return `<button class="opt ${own?"owned":""}" data-act="buy" data-v="${p.id}" ${own||s.stash<p.cost?"disabled":""}><span class="nm">${p.name}<small>${p.desc}</small></span><span class="c">${own?"Owned":fmt(p.cost)}</span></button>`;}).join("")}</div>
+  <p class="hint">Paid from your stash. If you flee now you keep ${Math.round(keepShare(s)*100)}% of the stash.</p></section>`;
+
+  h+=`<section><h2>Next week</h2><div class="forecast" id="forecast"></div></section>`;
+  document.getElementById("app").innerHTML=h;
+  document.getElementById("runBtn").textContent=`Run (~${approx(escapeOdds(s))}%)`;
+  document.getElementById("skim").addEventListener("input",e=>{S.skim=e.target.value/100;updateSkim();});
+  updateSkim();
+}
+
+function updateSkim(){
+  const s=S, mktCost=MKT[s.mkt].cost, cvCost=coverCost(s);
+  const left=Math.max(0,s.cash-mktCost-cvCost), skim=Math.floor(left*s.skim), after=left-skim;
+  const due=s.owed*(1+RATES[s.rate])*withdrawFrac(s);
+  document.getElementById("skimPct").textContent=Math.round(s.skim*100)+"% of cash";
+  document.getElementById("skimAmt").textContent=fmt(skim);
+  document.getElementById("forecast").innerHTML=
+    `<div class="report"><div class="ln"><span>Cash after spending and skimming</span><span>${fmt(after)}</span></div>
+    <div class="ln"><span>Payouts due (before new deposits)</span><span>≈ ${fmt(due)}</span></div></div>
+    ${due>after?`<div class="${due>after*2?"bad":"warn"}">You need new deposits to cover payouts. If they fall short, investors will panic.</div>`:""}`;
+}
+
+function endWeek(){
+  const s=S, r=RATES[s.rate], m=MKT[s.mkt], notes=[];
+  let dHeat=0, dTrust=0;
+  const cvCost=coverCost(s);
+  s.cash-=m.cost+cvCost;
+  if(s.cover==="audit"){dHeat-=8;dTrust+=4;notes.push("A respectable-looking firm signs off on your books.");}
+  if(s.cover==="gala"){dTrust+=10;dHeat-=3;notes.push("Your charity gala makes the society pages.");}
+  if(s.cover==="bribe"){if(Math.random()<0.15){dHeat+=25;notes.push("The regulator you tried to bribe reported you.");}else{dHeat-=15;notes.push("A regulator quietly loses your file.");}}
+  s.cover="none";
+
+  const skim=Math.floor(Math.max(0,s.cash)*s.skim);
+  s.cash-=skim; s.stash+=skim; s.totalSkim+=skim;
+  dHeat+=skim/Math.max(s.owed,50e3)*20*(s.prep.shells?0.5:1);
+
+  const trustF=Math.max(0.1,s.trust/70);
+  const leads=m.leads+s.investors*0.03;
+  const newInv=Math.max(0,Math.round(leads*APPEAL[s.rate]*trustF*rand(0.7,1.3)));
+  const dep=Math.round(newInv*5e3*(1+0.04*s.week)*rand(0.8,1.2));
+  s.investors+=newInv; s.cash+=dep; s.owed+=dep;
+
+  s.owed+=s.owed*r;
+  const wf=withdrawFrac(s), due=s.owed*wf, paid=Math.min(Math.max(s.cash,0),due);
+  s.cash-=paid; s.owed-=paid;
+  const left=Math.min(s.investors,Math.round(s.investors*(0.006+(wf-0.02-0.5*r)*0.5)));
+  s.investors-=left;
+
+  if(due>0&&paid<due*0.999){s.missed++;dTrust-=22;dHeat+=12;notes.push(`You missed ${fmt(due-paid)} in payouts. Investors are calling the office.`);}
+  else{s.missed=0;dTrust+=2+(r>=0.05?1:0);}
+
+  dHeat+=0.6*Math.log10(Math.max(s.owed,1e4)/1e4)+s.investors/1000*0.3+m.heat+Math.max(0,r-0.03)*80-1;
+  if(s.trust<30)dHeat+=2;
+  s.heat=clamp(s.heat+dHeat,0,100); s.trust=clamp(s.trust+dTrust,0,100);
+  s.peakOwed=Math.max(s.peakOwed,s.owed); s.peakInv=Math.max(s.peakInv,s.investors);
+  s.report={newInv,dep,due,paid,skim,left,spend:m.cost+cvCost};
+  s.week++;
+  s.notes=notes;
+
+  if(s.missed>=2||s.trust<=0){collapse();return;}
+  if(s.week>=4&&Math.random()<0.4){showEvent();return;}
+  raidCheck();
+}
+
+function raidCheck(){
+  const s=S; s.heat=clamp(s.heat,0,100); s.trust=clamp(s.trust,0,100);
+  if(Math.random()<raidChance(s.heat)){
+    if(s.prep.jet){
+      const o=escapeOdds(s,15);
+      modal(`<div class="tag">Week ${s.week}</div><h3>Agents are at the front door</h3><p>Your pilot is fueling the jet. You might make it out the back.</p>
+        <div class="btns"><button class="big run" data-act="flee" data-v="15">Run for the jet (~${approx(o)}%)</button><button class="big alt" data-act="caught">Surrender</button></div>`);
+    }else{ending("caught");}
+    return;
+  }
+  const lvl=heatLabel(s.heat);
+  if(s.heat>=35)s.notes.push(pick({
+    "A reporter is digging":["A reporter called your receptionist asking about returns.","Someone photographed your office sign."],
+    "Regulators opened a file":["A regulator asked your bank for statements.","An SEC intern requested your filings."],
+    "Federal investigation":["Two men in suits sat in your lobby for an hour.","Your phone makes a clicking sound now."],
+    "Agents are closing in":["Your lawyer stopped returning calls.","A van has been parked outside your house all week."]}[lvl]));
+  render();
+}
+
+function collapse(){
+  const s=S;
+  modal(`<div class="tag">Week ${s.week}</div><h3>The fund has collapsed</h3><p>You can't pay what you owe and investors are lining up outside. The authorities will be here within hours.</p>
+    <p>Escape odds: about ${approx(escapeOdds(s,20))}%. You'd keep ${fmt(s.stash*keepShare(s))}.</p>
+    <div class="btns"><button class="big run" data-act="flee" data-v="20">Run</button></div>`);
+}
+
+function confirmRun(){
+  const s=S;
+  modal(`<h3>Flee now?</h3><p>Escape odds: about ${approx(escapeOdds(s))}%.</p><p>If you make it, you keep <b class="good">${fmt(s.stash*keepShare(s))}</b>${s.prep.shells?"":" (40% gets frozen without shell companies)"}. If you're caught, you lose everything.</p>
+    <div class="btns"><button class="big run" data-act="flee" data-v="0">Disappear</button><button class="big alt" data-act="close">Stay another week</button></div>`);
+}
+
+function attemptEscape(pen){
+  const o=escapeOdds(S,pen);
+  ending(Math.random()*100<o?"escaped":"failed");
+}
+
+function sentence(s){return Math.round(clamp(4+Math.log10(Math.max(s.owed+s.totalSkim,1e5)/1e5)*35,4,150));}
+function ending(kind){
+  const s=S, kept=Math.round(s.stash*keepShare(s));
+  let head,tag,body;
+  if(kind==="escaped"){tag="You got away";head=`${FUND} founder vanishes; ${fmt(s.owed)} missing`;body=`You land somewhere warm with ${fmt(kept)}. ${num(s.investors)} investors wake up to an empty office.`;}
+  else if(kind==="failed"){tag="Caught";head=`${FUND} founder arrested at the airport`;body=`Border agents recognized you. Sentenced to ${sentence(s)} years.`;}
+  else{tag="Caught";head=`Federal agents raid ${FUND}`;body=`You were arrested at your desk. Sentenced to ${sentence(s)} years.`;}
+  const score=kind==="escaped"?kept:0;
+  let best=0;try{best=+localStorage.getItem("ponzi-best")||0;if(score>best){localStorage.setItem("ponzi-best",score);}}catch(e){}
+  modal(`<div class="tag">${tag} · week ${s.week}</div><div class="headline">${head}</div><p>${body}</p>
+    <div class="endstats"><span>Weeks running</span><span>${s.week}</span><span>Peak investors</span><span>${num(s.peakInv)}</span>
+    <span>Peak owed</span><span>${fmt(s.peakOwed)}</span><span>Total skimmed</span><span>${fmt(s.totalSkim)}</span>
+    <span>Score (stash kept)</span><span class="${score?"good":"bad"}">${fmt(score)}</span><span>Best escape</span><span>${fmt(Math.max(best,score))}</span></div>
+    <div class="btns"><button class="big go" data-act="restart">New scheme</button></div>`);
+}
+
+// ---------- Events ----------
+const big=s=>Math.max(50e3,s.owed*0.03);
+const EVENTS=[
+  {t:"A retired prosecutor wants in", b:s=>`She wants to invest ${fmt(big(s))}. She asks a lot of questions.`, ch:[
+    {l:"Take her money", f:s=>{const a=big(s);s.cash+=a;s.owed+=a;s.investors++;s.heat+=7;return "Her check clears. She asks for a quick look at your books.";}},
+    {l:"Politely decline", f:()=>"She invests somewhere else."}]},
+  {t:"An early investor wants out", when:s=>s.investors>20, b:s=>`He wants all ${fmt(Math.max(10e3,s.owed*0.04))} back, today.`, ch:[
+    {l:"Pay him in full", cost:s=>Math.max(10e3,s.owed*0.04), f:s=>{s.trust+=6;return "He tells everyone how smoothly it went.";}},
+    {l:"Stall him", f:s=>{s.trust-=10;s.heat+=5;return "He starts posting about it online.";}}]},
+  {t:"A journalist wants an interview", b:()=>"She's writing a profile on high-performing funds.", ch:[
+    {l:"Turn on the charm", f:s=>{if(Math.random()<0.5){s.heat-=8;s.trust+=5;return "The profile is glowing.";}s.heat+=12;return "The article asks how your returns are possible.";}},
+    {l:"Decline", f:s=>{s.heat+=4;return "\"Declined to comment\" looks bad in print.";}}]},
+  {t:"Your accountant has questions", when:s=>s.week>5, b:()=>"He says the numbers don't add up.", ch:[
+    {l:"Give him a big raise", cost:s=>Math.max(20e3,s.owed*0.005), f:()=>"He stops asking."},
+    {l:"Fire him", f:s=>{s.heat+=10;return "He leaves with a box of files.";}}]},
+  {t:"The market crashes", b:()=>"Every investor in the country is nervous.", ch:[
+    {l:"Hold steady", f:s=>{s.trust-=15;return "Your phones ring all week.";}},
+    {l:"Pay a loyalty bonus", cost:s=>Math.max(10e3,s.owed*0.02), f:s=>{s.trust+=6;s.heat+=2;return "Your fund seems crash-proof. Suspiciously so.";}}]},
+  {t:"A celebrity offers an endorsement", b:s=>`A reality TV star will promote ${FUND} for ${fmt(Math.max(50e3,s.owed*0.02))}.`, ch:[
+    {l:"Sign the deal", cost:s=>Math.max(50e3,s.owed*0.02), f:s=>{const c=Math.max(50e3,s.owed*0.02)/1.0,d=c*4*rand(0.6,1.6),n=Math.round(d/(5e3*(1+0.04*s.week)));s.cash+=d;s.owed+=d;s.investors+=n;s.heat+=6;return `${num(n)} fans invest ${fmt(d)}.`;}},
+    {l:"Pass", f:()=>"They promote a crypto coin instead."}]},
+  {t:"A letter from the regulator", when:s=>s.heat>20, b:()=>"Routine request for your filings.", ch:[
+    {l:"Send forged documents", f:s=>{if(Math.random()<0.7){s.heat-=6;return "They file it away.";}s.heat+=20;return "Someone noticed the font changes halfway down the page.";}},
+    {l:"Ignore it", f:s=>{s.heat+=10;return "A second letter arrives. It's less polite.";}}]},
+  {t:"An angry thread goes viral", when:s=>s.investors>50, b:()=>"An investor's spouse is calling you a fraud online.", ch:[
+    {l:"Pay them to delete it", cost:s=>Math.max(10e3,s.owed*0.003), f:s=>{s.heat-=2;return "The thread disappears.";}},
+    {l:"Ignore it", f:s=>{s.trust-=8;s.heat+=5;return "It gets picked up by a finance blog.";}}]},
+  {t:"A rival scheme collapses", b:()=>"Another fund just imploded on the evening news.", ch:[
+    {l:"Lie low", f:s=>{s.trust-=6;s.heat-=4;return "You cancel the yacht party.";}},
+    {l:"Say \"we're different\"", f:s=>{s.trust+=6;s.heat+=6;return "Investors believe you. So does nobody at the SEC.";}}]},
+  {t:"Your mom wants to invest", when:s=>!s.momDone, b:()=>"She wants to put in her retirement savings.", ch:[
+    {l:"Take her $40k", f:s=>{s.momDone=true;s.cash+=40e3;s.owed+=40e3;s.investors++;s.trust+=3;return "\"Even his own mother invests.\"";}},
+    {l:"Tell her the fund is full", f:s=>{s.momDone=true;return "She's offended. You feel something unfamiliar.";}}]},
+  {t:"A church group wants to invest", when:s=>s.week>4, b:s=>`150 members want to pool ${fmt(Math.max(200e3,s.owed*0.05))}.`, ch:[
+    {l:"Welcome them", f:s=>{const a=Math.max(200e3,s.owed*0.05);s.cash+=a;s.owed+=a;s.investors+=150;s.heat+=5;return "The pastor mentions you in his sermon.";}},
+    {l:"Decline", f:()=>"They thank you for your honesty."}]},
+  {t:"Your offshore bank flags transfers", when:s=>s.stash>50e3, b:()=>"Compliance wants to know where the money comes from.", ch:[
+    {l:"Pay a \"compliance fee\"", cost:s=>s.stash*0.05, from:"stash", f:()=>"The question goes away."},
+    {l:"Move it all to crypto", f:s=>{s.heat+=7;return "A blockchain analyst takes an interest.";}}]},
+  {t:"A whistleblower threatens to talk", when:s=>s.investors>200, b:()=>"A junior employee figured it out.", ch:[
+    {l:"Pay hush money", cost:s=>Math.max(25e3,s.stash*0.08), from:"stash", f:()=>"She signs an NDA and moves to Portugal."},
+    {l:"Call her bluff", f:s=>{if(Math.random()<0.5)return "She doesn't talk. Yet.";s.heat+=22;return "She talks.";}}]},
+  {t:"Tax audit", when:s=>s.week>6, b:()=>"The tax office wants to review last year.", ch:[
+    {l:"Hire a slick accountant", cost:s=>Math.max(15e3,s.owed*0.004), f:s=>{s.heat-=2;return "The audit finds nothing it can understand.";}},
+    {l:"Ignore it", f:s=>{s.heat+=12;return "The tax office shares notes with the regulator.";}}]},
+];
+let curEvent=null;
+function showEvent(){
+  const s=S, pool=EVENTS.filter(e=>!e.when||e.when(s));
+  curEvent=pick(pool);
+  modal(`<div class="tag">Week ${s.week}</div><h3>${curEvent.t}</h3><p>${curEvent.b(s)}</p><div class="btns">${curEvent.ch.map((c,i)=>{
+    const cost=c.cost?c.cost(s):0, from=c.from||"cash", ok=!cost||s[from]>=cost;
+    return `<button class="big ${i===0?"go":"alt"}" data-act="choose" data-v="${i}" ${ok?"":"disabled"}>${c.l}${cost?` · ${fmt(cost)}${from==="stash"?" from stash":""}`:""}</button>`;}).join("")}</div>`);
+}
+function resolveEvent(i){
+  const s=S, c=curEvent.ch[i], cost=c.cost?c.cost(s):0;
+  if(cost)s[c.from||"cash"]-=cost;
+  s.notes.push(`<b>${curEvent.t}.</b> ${c.f(s)}`);
+  curEvent=null; closeModal(); raidCheck();
+}
+
+// ---------- UI plumbing ----------
+function modal(html){document.getElementById("card").innerHTML=html;document.getElementById("modal").hidden=false;}
+function closeModal(){document.getElementById("modal").hidden=true;}
+const ACT={
+  rate:v=>{S.rate=+v;render();},
+  mkt:v=>{S.mkt=+v;render();},
+  cover:v=>{S.cover=v;render();},
+  buy:v=>{const p=PREP.find(x=>x.id===v);if(S.prep[v]||S.stash<p.cost)return;S.stash-=p.cost;S.prep[v]=true;if(p.heat)S.heat=clamp(S.heat+p.heat,0,100);S.notes.push(`You bought: ${p.name}.`);render();},
+  end:()=>{if(document.getElementById("modal").hidden)endWeek();},
+  run:()=>{if(document.getElementById("modal").hidden)confirmRun();},
+  flee:v=>attemptEscape(+v),
+  caught:()=>ending("caught"),
+  close:()=>closeModal(),
+  choose:v=>resolveEvent(+v),
+  restart:()=>{S=newGame();closeModal();render();window.scrollTo(0,0);},
+};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b||b.disabled)return;ACT[b.dataset.act]?.(b.dataset.v);});
+
+if(typeof window.claude?.hot?.snapshot==="function")window.claude.hot.snapshot(()=>({S}));
+const start=d=>{S=d&&d.S?d.S:newGame();render();};
+window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+</script>

@@ -1,0 +1,481 @@
+<title>Ponzi Run</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@500;700&family=IBM+Plex+Sans:wght@400;600&family=Old+Standard+TT:wght@400;700&display=swap">
+<style>
+/* Layout: one-screen arcade — HUD strip, canvas playfield sized to fit, thumb controls along the bottom. Single dark look by choice. */
+:root{
+  --bg:#0f1512; --panel:#17201b; --panel2:#1e2a23; --line:#2b3a31; --fg:#e8efe9; --muted:#8fa497;
+  --money:#5fd48a; --gold:#e9c46a; --danger:#ff6b5b; --warn:#f4a259;
+  --paper:#efe9da; --ink:#1d1b17; --inkmuted:#5d574b;
+  --display:"Archivo Black", Impact, "Arial Black", sans-serif;
+  --body:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --news:"Old Standard TT", Georgia, serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.4;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.game{height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:8px calc(8px + env(safe-area-inset-bottom,0px))}
+.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.hud div{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 6px;min-width:0}
+.hud span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.hud b{font-family:var(--mono);font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.conf{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden}
+.conf i{display:block;height:100%;background:var(--money);transition:width .2s}
+.stage{flex:1;min-height:0;display:flex;justify-content:center;align-items:flex-start}
+canvas{display:block;touch-action:none;border-radius:8px;background:var(--bg)}
+.controls{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:8px}
+.controls button{font:inherit;font-family:var(--display);font-size:15px;letter-spacing:.5px;border:none;border-radius:10px;padding:14px 6px;cursor:pointer;touch-action:manipulation;line-height:1.1}
+.controls small{display:block;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0;margin-top:2px}
+#hype{background:var(--panel2);color:var(--fg);border:1px solid var(--line)}
+#skim{background:var(--gold);color:#2a2005}
+#skim.on{filter:brightness(1.2);box-shadow:0 0 0 3px var(--gold) inset,0 0 18px var(--gold)}
+#run{background:var(--danger);color:#1d0806}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.modal{position:fixed;inset:0;background:rgba(5,8,6,.85);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));z-index:20}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;max-width:440px;width:100%;display:flex;flex-direction:column;gap:12px;max-height:100%;overflow:auto;-webkit-user-select:text;user-select:text}
+.card h3{font-family:var(--display);font-size:22px;margin:0;text-wrap:balance}
+.card h3 small{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:6px}
+.card p{margin:0}
+.card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.card .tag{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.big{font:inherit;font-family:var(--display);font-size:16px;border:none;border-radius:9px;padding:14px;cursor:pointer;letter-spacing:.5px;width:100%}
+.big.go{background:var(--money);color:#0b1a10}
+.big.run{background:var(--danger);color:#1d0806}
+.big.alt{background:var(--panel2);color:var(--fg);border:1px solid var(--line)}
+.btns{display:flex;flex-direction:column;gap:8px}
+.headline{font-family:var(--news);font-weight:700;font-size:19px;background:var(--paper);color:var(--ink);padding:10px 12px;border-radius:3px;text-wrap:balance}
+.ep{display:flex;flex-direction:column;gap:3px}
+.ep p{font-size:14px;line-height:1.5}
+.endstats{border-top:1px solid var(--line);padding-top:10px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px}
+.endstats span:nth-child(even){font-family:var(--mono);text-align:right}
+.good{color:var(--money)} .bad{color:var(--danger)}
+</style>
+
+<div class="game">
+  <div class="hud">
+    <div><span>Week</span><b id="hWeek">1</b></div>
+    <div><span>Fund cash</span><b id="hPot">$20k</b></div>
+    <div><span>Investors</span><b id="hInv">0</b></div>
+    <div><span>Your vault</span><b id="hVault" style="color:var(--gold)">$0</b></div>
+  </div>
+  <div class="conf" title="Investor confidence"><i id="hConf" style="width:100%"></i></div>
+  <div class="stage" id="stage"><canvas id="cv" aria-label="Game field"></canvas></div>
+  <div class="controls">
+    <button id="hype">Hype<small id="hypeCost">$3k</small></button>
+    <button id="skim">Hold to skim<small>to your vault</small></button>
+    <button id="run">Run<small>getaway</small></button>
+  </div>
+</div>
+<div class="modal" id="modal" hidden><div class="card" id="card"></div></div>
+
+<script>
+const VERSION = "1.3.1";
+const FUND = "Evergreen Capital";
+const CITY = "Port Ashford";
+const W = 360, H = 560;            // logical playfield
+const DOOR = 296;                  // sidewalk walkers vanish at the office door
+const SLOTS = [];                  // withdrawal bubble positions, 3 x 3
+for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) SLOTS.push({x: 64 + c * 116, y: 200 + r * 104});
+const LANES = [90, 180, 270];
+
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const rand=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function fmt(n){const a=Math.abs(n),s=n<0?"−":"";
+  if(a>=1e9)return s+"$"+(a/1e9).toFixed(2)+"B";
+  if(a>=1e6)return s+"$"+(a/1e6).toFixed(a>=1e8?0:1)+"M";
+  if(a>=1e3)return s+"$"+(a/1e3).toFixed(a>=1e5?0:1)+"k";
+  return s+"$"+Math.round(a);}
+const num=n=>Math.round(n).toLocaleString("en-US");
+
+const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+const $=id=>document.getElementById(id);
+let G=null, scale=1;
+
+// ---------- Sizing ----------
+function resize(){
+  const st=$("stage"), avW=st.clientWidth, avH=st.clientHeight;
+  let w=avW, h=w*H/W;
+  if(h>avH){h=avH;w=h*W/H;}
+  const dpr=window.devicePixelRatio||1;
+  cv.style.width=w+"px"; cv.style.height=h+"px";
+  cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);
+  scale=w/W; ctx.setTransform(dpr*scale,0,0,dpr*scale,0,0);
+}
+window.addEventListener("resize",resize);
+
+// ---------- State ----------
+function newRun(){
+  return {t:0,pot:20e3,vault:0,owed:0,investors:0,heat:0,conf:100,walkers:[],bubbles:Array(9).fill(null),pickups:[],floats:[],
+    skim:false,agents:0,reporters:0,angry:0,paid:0,signed:0,skimmed:0,peakInv:0,peakOwed:0,mode:"play",
+    spawnT:0.4,wdT:4,pickT:rand(12,18),hypeCD:0,flash:null,carX:-60,shake:0,collapse:false,
+    ticker:{text:"",x:W,w:0},ch:null};
+}
+const week=()=>1+Math.floor(G.t/25);
+const baseDep=()=>4000*(1+week()*0.08);
+const hypeCost=()=>Math.round(3000*(1+week()*0.15)/100)*100;
+
+// ---------- Spawning ----------
+const SUITS=["#3b5b8c","#7a3b3b","#4f6b46","#6b5a8c","#8c6b3b","#3b7a78","#5d5d5d","#8c3b6b"];
+const SKIN=["#f1c7a5","#d9a27a","#b07a52","#8a5a3b","#5e3d28"];
+const HAIR=["#2b2118","#6b4a2b","#c9a15a","#8a8a8a","#1a1a1a","#a0522d"];
+function spawnWalker(xOff=0,rich=false){
+  const wk=week();
+  const plantP=0.03+G.heat/100*0.2+wk*0.004;
+  const type=Math.random()<plantP?(Math.random()<0.65?"agent":"reporter"):"mark";
+  let amt=baseDep()*rand(0.5,1.5);
+  if(type==="agent")amt*=rand(2,4);
+  else if(rich||Math.random()<0.1)amt*=rand(2,4);
+  G.walkers.push({x:-20-xOff,y:Math.random()<0.5?92:122,v:rand(36,58)*(1+wk*0.02),phase:Math.random()*6,type,
+    amt:Math.round(amt/100)*100,suit:type==="agent"?pick(["#1c1f24","#23272e","#2a2d33"]):pick(SUITS),skin:pick(SKIN),hair:pick(HAIR),
+    shades:type==="agent"?Math.random()<0.75:Math.random()<0.12,
+    hat:type==="reporter"?true:Math.random()<0.15,press:type==="reporter"&&Math.random()<0.6,
+    pad:type==="reporter",paper:type==="mark"&&Math.random()<0.1,glint:Math.random()*2});
+}
+function spawnBubble(){
+  const free=G.bubbles.map((b,i)=>b?null:i).filter(i=>i!==null);
+  if(!free.length||G.investors<1)return;
+  const i=pick(free), amt=Math.max(500,(G.owed/G.investors)*rand(0.35,0.9));
+  const life=Math.max(3.2,7.5-week()*0.2);
+  G.bubbles[i]={amt:Math.round(amt/100)*100,life,max:life,skin:pick(SKIN),wob:0};
+}
+const PICKUPS={
+  audit:{label:"Fake audit",color:"#e9c46a"},
+  celeb:{label:"Celebrity",color:"#e98ac9"},
+  bribe:{label:"Bribe",color:"#8ad1e9"},
+};
+function spawnPickup(){G.pickups.push({type:pick(Object.keys(PICKUPS)),x:-30,y:rand(180,420),v:44,ph:Math.random()*6});}
+
+// ---------- Headlines ----------
+const NEWS=[
+  ["SEC budget trimmed again",`${FUND} sponsors Little League team`,"Regulators buried in bank merger reviews","Local investors enjoy a record year"],
+  ["Columnist: beware of \"guaranteed\" returns","Forum users debate \"too good to be true\" funds","Better Business Bureau logs new complaints"],
+  ["Reporter spotted at county records office","Business Weekly preparing exposé, sources say","Analyst: no real fund pays like this"],
+  ["SEC opens inquiry into unnamed regional fund",`Regulators subpoena ${CITY} bank records`,"Attorney general forms fraud task force"],
+  [`FBI adds white-collar agents in ${CITY}`,"Grand jury meets in sealed financial case","Banks told to flag offshore wires"],
+];
+const FILLER=["Otters win in extra innings","Escaped llama found safe in library parking lot","Heat wave expected through the weekend","Mayor opens new parking garage","Ponzi documentary tops streaming charts"];
+function nextHeadline(){
+  const tier=clamp(Math.floor((G.heat+rand(-15,15))/20),0,4);
+  const text=`THE ${CITY.toUpperCase()} LEDGER  ·  ${(Math.random()<0.3?pick(FILLER):pick(NEWS[tier])).toUpperCase()}`;
+  ctx.font="700 13px 'Old Standard TT', Georgia, serif";
+  G.ticker={text,x:W,w:ctx.measureText(text).width};
+}
+
+// ---------- Actions ----------
+function float(x,y,text,color){G.floats.push({x,y,text,color,t:1.1});}
+function flash(text,color){G.flash={text,color,t:1.2};G.shake=0.35;}
+function signWalker(w){
+  G.walkers=G.walkers.filter(x=>x!==w);
+  G.pot+=w.amt;G.owed+=w.amt;G.investors++;G.signed++;
+  G.peakInv=Math.max(G.peakInv,G.investors);
+  if(w.type==="agent"){G.heat+=20;G.agents++;flash("THAT WAS A FED","#ff6b5b");}
+  else if(w.type==="reporter"){G.heat+=12;G.reporters++;flash("REPORTER!","#f4a259");}
+  else float(w.x,w.y-60,"+"+fmt(w.amt),"#5fd48a");
+}
+function payBubble(i){
+  const b=G.bubbles[i];
+  if(G.pot<b.amt){b.wob=0.4;float(SLOTS[i].x,SLOTS[i].y-40,"Not enough cash","#ff6b5b");return;}
+  G.pot-=b.amt;G.owed=Math.max(0,G.owed-b.amt);G.conf=Math.min(100,G.conf+1.5);G.paid++;
+  float(SLOTS[i].x,SLOTS[i].y-40,"Paid","#5fd48a");G.bubbles[i]=null;
+}
+function takePickup(p){
+  G.pickups=G.pickups.filter(x=>x!==p);
+  if(p.type==="audit"){G.heat-=25;float(p.x,p.y-20,"Books look clean","#e9c46a");}
+  if(p.type==="celeb"){for(let i=0;i<5;i++)spawnWalker(i*42,true);G.heat+=4;float(p.x,p.y-20,"Fans incoming","#e98ac9");}
+  if(p.type==="bribe"){if(Math.random()<0.2){G.heat+=15;flash("BRIBE BACKFIRED","#ff6b5b");}else{G.heat-=15;float(p.x,p.y-20,"File lost","#8ad1e9");}}
+}
+function hype(){
+  if(G.mode!=="play"||G.hypeCD>0||G.pot<hypeCost())return;
+  G.pot-=hypeCost();G.hypeCD=5;G.heat+=3;
+  for(let i=0;i<5;i++)spawnWalker(i*40);
+}
+
+// ---------- Update ----------
+function update(dt){
+  if(G.mode==="chase"){updateChase(dt);return;}
+  if(G.mode!=="play")return;
+  G.t+=dt;
+  const wk=week();
+  G.spawnT-=dt;
+  if(G.spawnT<=0){spawnWalker();G.spawnT=rand(0.6,1.4)/(0.55+wk*0.03);}
+  for(const w of G.walkers){w.x+=w.v*dt;w.phase+=dt*8;w.glint+=dt;}
+  G.walkers=G.walkers.filter(w=>w.x<DOOR);
+  if(G.investors>0){G.wdT-=dt;if(G.wdT<=0){spawnBubble();G.wdT=rand(0.6,1.4)/Math.min(1.6,0.12+G.investors*0.006);}}
+  G.bubbles.forEach((b,i)=>{if(!b)return;b.life-=dt;b.wob=Math.max(0,b.wob-dt);
+    if(b.life<=0){G.bubbles[i]=null;G.conf-=8;G.heat+=4;G.angry++;float(SLOTS[i].x,SLOTS[i].y-40,"ANGRY","#ff6b5b");}});
+  G.pickT-=dt;if(G.pickT<=0){spawnPickup();G.pickT=rand(14,24);}
+  for(const p of G.pickups){p.x+=p.v*dt;p.ph+=dt*3;}
+  G.pickups=G.pickups.filter(p=>p.x<W+30);
+  if(G.skim&&G.pot>0){const amt=Math.min(G.pot,Math.max(2000,G.pot*0.25)*dt);G.pot-=amt;G.vault+=amt;G.skimmed+=amt;G.heat+=amt/Math.max(G.owed,20e3)*22;}
+  G.owed*=1+0.006*dt;              // promised returns keep piling up
+  G.peakOwed=Math.max(G.peakOwed,G.owed);
+  G.heat+=(G.investors*0.0025+wk*0.012-1.1)*dt;
+  G.heat=clamp(G.heat,0,100);
+  G.conf=Math.min(100,G.conf+0.6*dt);
+  G.hypeCD=Math.max(0,G.hypeCD-dt);
+  const target=-60+(DOOR-46+60)*(G.heat/100);
+  G.carX+=(target-G.carX)*Math.min(1,dt*2);
+  for(const f of G.floats){f.t-=dt;f.y-=28*dt;}
+  G.floats=G.floats.filter(f=>f.t>0);
+  if(G.flash){G.flash.t-=dt;if(G.flash.t<=0)G.flash=null;}
+  G.shake=Math.max(0,G.shake-dt);
+  G.ticker.x-=55*dt;if(G.ticker.x+G.ticker.w<0)nextHeadline();
+  if(G.heat>=100){G.mode="over";setTimeout(()=>ending("raid"),700);return;}
+  if(G.conf<=0){flash("BANK RUN!","#ff6b5b");startChase(true);}
+}
+
+// ---------- Getaway chase ----------
+function startChase(collapse){
+  G.skim=false;$("skim").classList.remove("on");
+  G.collapse=collapse;G.mode="chase";
+  G.ch={lane:1,px:LANES[1],t:-1.2,dur:12,cars:[],spawn:0.2,dash:0,heat:Math.min(100,G.heat+(collapse?20:0))};
+}
+function updateChase(dt){
+  const c=G.ch;c.t+=dt;c.px+=(LANES[c.lane]-c.px)*Math.min(1,dt*14);
+  const speed=220+c.heat*2;c.dash=(c.dash+speed*dt)%40;
+  if(G.flash){G.flash.t-=dt;if(G.flash.t<=0)G.flash=null;}
+  G.shake=Math.max(0,G.shake-dt);
+  if(c.t<0)return;
+  c.spawn-=dt;
+  if(c.spawn<=0&&c.t<c.dur-1.5){
+    const lanes=[0,1,2].sort(()=>Math.random()-0.5).slice(0,Math.random()<0.15+c.heat/300?2:1);
+    for(const l of lanes)c.cars.push({lane:l,y:-50});
+    c.spawn=Math.max(0.45,1.2-c.heat/100*0.7)*rand(0.8,1.2);
+  }
+  for(const car of c.cars)car.y+=speed*dt;
+  c.cars=c.cars.filter(car=>car.y<H+60);
+  for(const car of c.cars)if(Math.abs(LANES[car.lane]-c.px)<40&&Math.abs(car.y-470)<52){G.mode="over";G.shake=0.5;setTimeout(()=>ending("crash"),700);return;}
+  if(c.t>=c.dur){G.mode="over";setTimeout(()=>ending("escaped"),300);}
+}
+
+// ---------- Drawing ----------
+function drawPerson(w){
+  const {x,y}=w, step=Math.sin(w.phase)*4;
+  ctx.strokeStyle="#151515";ctx.lineWidth=3;ctx.lineCap="round";
+  ctx.beginPath();ctx.moveTo(x-3,y-8);ctx.lineTo(x-3-step,y);ctx.moveTo(x+3,y-8);ctx.lineTo(x+3+step,y);ctx.stroke();
+  ctx.fillStyle=w.suit;ctx.fillRect(x-8,y-26,16,19);
+  ctx.fillStyle="#f4f4f4";ctx.fillRect(x-2,y-26,4,6);
+  ctx.fillStyle=w.skin;ctx.beginPath();ctx.arc(x,y-32,6.5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=w.hair;ctx.beginPath();ctx.arc(x,y-34,6.5,Math.PI,0);ctx.fill();
+  if(w.hat){ctx.fillStyle="#3a3128";ctx.fillRect(x-9,y-39,18,3);ctx.fillRect(x-6,y-45,12,6);
+    if(w.press){ctx.fillStyle="#fff";ctx.fillRect(x+1,y-44,5,3);}}
+  if(w.shades){ctx.fillStyle="#0a0a0a";ctx.fillRect(x-6,y-34,12,3);}
+  else{ctx.fillStyle="#151515";ctx.fillRect(x-3,y-33,2,2);ctx.fillRect(x+2,y-33,2,2);}
+  if(w.type==="agent"){ctx.strokeStyle="#e8e8e8";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x+6,y-31);ctx.quadraticCurveTo(x+9,y-27,x+6,y-24);ctx.stroke();
+    if(w.glint%2.2<0.28){ctx.fillStyle="#ffe27a";ctx.beginPath();ctx.arc(x-4,y-20,2.6,0,Math.PI*2);ctx.fill();ctx.fillRect(x-7,y-20.5,6,1);ctx.fillRect(x-4.5,y-23,1,6);}}
+  if(w.pad){ctx.fillStyle="#fff";ctx.fillRect(x+8,y-21,7,9);ctx.fillStyle="#999";ctx.fillRect(x+9,y-18,5,1);ctx.fillRect(x+9,y-15,5,1);}
+  if(w.paper){ctx.fillStyle="#cfcabb";ctx.fillRect(x+8,y-22,9,11);}
+  const big=w.amt>baseDep()*2.2;
+  ctx.font=`${big?"700 12px":"500 11px"} 'IBM Plex Mono', monospace`;ctx.textAlign="center";
+  ctx.fillStyle=big?"#e9c46a":"#5fd48a";ctx.fillText(fmt(w.amt),x,y-50);
+}
+function drawCar(x,y,police,lights,vertical){
+  ctx.save();ctx.translate(x,y);if(vertical)ctx.rotate(Math.PI/2);
+  ctx.fillStyle=police?"#101214":"#e9c46a";ctx.fillRect(-23,-10,46,20);
+  ctx.fillStyle=police?"#2c3e50":"#3a3220";ctx.fillRect(-10,-8,18,16);
+  if(police){ctx.fillStyle="#f4f4f4";ctx.fillRect(-23,-2,46,4);}
+  if(lights){const on=Math.floor(performance.now()/150)%2;ctx.fillStyle=on?"#ff3b3b":"#3b7bff";ctx.fillRect(-4,-12,4,4);ctx.fillStyle=on?"#3b7bff":"#ff3b3b";ctx.fillRect(0,-12,4,4);}
+  ctx.restore();
+}
+function drawPlay(){
+  ctx.fillStyle="#0f1512";ctx.fillRect(0,0,W,H);
+  ctx.fillStyle="#22272a";ctx.fillRect(0,0,W,46);
+  ctx.strokeStyle="#5a5a4a";ctx.lineWidth=2;ctx.setLineDash([12,10]);ctx.beginPath();ctx.moveTo(0,23);ctx.lineTo(W,23);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle="#1e2a23";ctx.fillRect(0,50,W,84);
+  ctx.fillStyle="#26342b";for(let x=0;x<W;x+=30)ctx.fillRect(x,50,1,84);
+  // office
+  ctx.fillStyle="#2b3a31";ctx.fillRect(DOOR,0,W-DOOR,140);
+  ctx.fillStyle="#e9c46a";ctx.font="700 9px 'IBM Plex Mono', monospace";ctx.textAlign="center";
+  ctx.fillText("EVERGREEN",DOOR+32,62);ctx.fillText("CAPITAL",DOOR+32,73);
+  ctx.fillStyle="#3c5a47";ctx.fillRect(DOOR+8,84,16,14);ctx.fillRect(DOOR+40,84,16,14);
+  ctx.fillStyle="#0b0f0d";ctx.fillRect(DOOR+20,106,24,30);
+  drawCar(G.carX+23,23,true,G.heat>70);
+  if(G.heat>70){ctx.fillStyle="rgba(255,59,59,"+(0.08+0.06*Math.sin(performance.now()/120))+")";ctx.fillRect(0,0,W,H);}
+  for(const w of G.walkers)drawPerson(w);
+  // withdrawal area
+  ctx.fillStyle="#17201b";ctx.fillRect(0,144,W,374);
+  if(G.investors===0){ctx.fillStyle="#8fa497";ctx.font="500 13px 'IBM Plex Sans', sans-serif";ctx.textAlign="center";
+    ctx.fillText("Tap people on the sidewalk to sign them up.",W/2,300);ctx.fillText("Withdrawal requests will appear here.",W/2,320);}
+  G.bubbles.forEach((b,i)=>{if(!b)return;const s=SLOTS[i],f=b.life/b.max,ox=b.wob?Math.sin(b.wob*60)*4:0;
+    ctx.save();ctx.translate(s.x+ox,s.y);
+    ctx.fillStyle="#1e2a23";ctx.beginPath();ctx.arc(0,0,38,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle=f>0.5?"#5fd48a":f>0.25?"#f4a259":"#ff6b5b";ctx.lineWidth=5;
+    ctx.beginPath();ctx.arc(0,0,38,-Math.PI/2,-Math.PI/2+Math.PI*2*f);ctx.stroke();
+    ctx.fillStyle=b.skin;ctx.beginPath();ctx.arc(0,-10,13,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="#151515";ctx.fillRect(-6,-14,3,3);ctx.fillRect(3,-14,3,3);
+    ctx.strokeStyle="#151515";ctx.lineWidth=2;ctx.beginPath();
+    const m=f>0.5?1:f>0.25?0:-1;ctx.moveTo(-5,-4-m);ctx.quadraticCurveTo(0,-4+m*4,5,-4-m);ctx.stroke();
+    if(f<=0.25){ctx.beginPath();ctx.moveTo(-8,-19);ctx.lineTo(-3,-17);ctx.moveTo(8,-19);ctx.lineTo(3,-17);ctx.stroke();}
+    ctx.fillStyle=G.pot>=b.amt?"#e8efe9":"#ff6b5b";ctx.font="700 13px 'IBM Plex Mono', monospace";ctx.textAlign="center";ctx.fillText(fmt(b.amt),0,22);
+    ctx.restore();});
+  for(const p of G.pickups){const y=p.y+Math.sin(p.ph)*6,c=PICKUPS[p.type].color;
+    ctx.fillStyle=c;ctx.fillRect(p.x-16,y-10,32,22);ctx.strokeStyle=c;ctx.lineWidth=3;ctx.strokeRect(p.x-6,y-16,12,7);
+    ctx.fillStyle="#1d1b17";ctx.fillRect(p.x-16,y-1,32,2);
+    ctx.fillStyle=c;ctx.font="700 11px 'IBM Plex Mono', monospace";ctx.textAlign="center";ctx.fillText(PICKUPS[p.type].label,p.x,y+26);}
+  // ticker
+  ctx.fillStyle="#efe9da";ctx.fillRect(0,524,W,36);
+  ctx.fillStyle="#1d1b17";ctx.font="700 13px 'Old Standard TT', Georgia, serif";ctx.textAlign="left";ctx.fillText(G.ticker.text,G.ticker.x,547);
+  for(const f of G.floats){ctx.globalAlpha=clamp(f.t,0,1);ctx.fillStyle=f.color;ctx.font="700 14px 'IBM Plex Mono', monospace";ctx.textAlign="center";ctx.fillText(f.text,f.x,f.y);ctx.globalAlpha=1;}
+  if(G.skim){ctx.fillStyle="rgba(233,196,106,.12)";ctx.fillRect(0,144,W,374);}
+}
+function drawChase(){
+  const c=G.ch;
+  ctx.fillStyle="#1b1f1d";ctx.fillRect(0,0,W,H);
+  ctx.fillStyle="#2a2f2c";ctx.fillRect(45,0,270,H);
+  ctx.fillStyle="#e8efe9";for(const lx of [135,225])for(let y=-40+c.dash;y<H;y+=40)ctx.fillRect(lx-2,y,4,20);
+  ctx.fillStyle="#3c5a47";for(let y=-40+c.dash;y<H;y+=40){ctx.fillRect(20,y,12,12);ctx.fillRect(W-32,y+20,12,12);}
+  for(const car of c.cars)drawCar(LANES[car.lane],car.y,true,true,true);
+  drawCar(c.px,470,false,false,true);
+  const p=clamp(c.t/c.dur,0,1);
+  ctx.fillStyle="#17201b";ctx.fillRect(16,12,W-32,18);ctx.fillStyle="#e9c46a";ctx.fillRect(16,12,(W-32)*p,18);
+  ctx.fillStyle=p>0.5?"#0f1512":"#e8efe9";ctx.font="700 11px 'IBM Plex Mono', monospace";ctx.textAlign="center";ctx.fillText("AIRPORT",W/2,25);
+  if(c.t<0){ctx.fillStyle="#e8efe9";ctx.font="32px 'Archivo Black', Impact, sans-serif";ctx.fillText(c.t<-0.6?"FLOOR IT":"GO!",W/2,H/2);
+    ctx.font="500 13px 'IBM Plex Sans', sans-serif";ctx.fillText("Tap left or right to switch lanes",W/2,H/2+28);}
+}
+function draw(){
+  ctx.save();
+  if(G.shake>0)ctx.translate(rand(-4,4),rand(-4,4));
+  if(G.ch)drawChase();else drawPlay();
+  if(G.flash){ctx.globalAlpha=clamp(G.flash.t,0,1);ctx.fillStyle=G.flash.color;ctx.font="28px 'Archivo Black', Impact, sans-serif";ctx.textAlign="center";ctx.fillText(G.flash.text,W/2,H/2);ctx.globalAlpha=1;}
+  ctx.restore();
+}
+function hud(){
+  $("hWeek").textContent=week();$("hPot").textContent=fmt(G.pot);$("hInv").textContent=num(G.investors);$("hVault").textContent=fmt(G.vault);
+  $("hConf").style.width=G.conf+"%";$("hConf").style.background=G.conf<30?"var(--danger)":G.conf<60?"var(--warn)":"var(--money)";
+  $("hypeCost").textContent=G.hypeCD>0?`${Math.ceil(G.hypeCD)}s`:fmt(hypeCost());
+  const play=G.mode==="play";
+  $("hype").disabled=!play||G.hypeCD>0||G.pot<hypeCost();$("skim").disabled=!play;$("run").disabled=!play;
+}
+
+// ---------- Loop ----------
+let last=0;
+function loop(ts){
+  const dt=Math.min(0.05,(ts-last)/1000||0);last=ts;
+  if(G&&$("modal").hidden&&!document.hidden)update(dt);
+  if(G){draw();hud();}
+  requestAnimationFrame(loop);
+}
+
+// ---------- Input ----------
+function toLogical(e){const r=cv.getBoundingClientRect();return {x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height};}
+cv.addEventListener("pointerdown",e=>{
+  if(!G||!$("modal").hidden)return;
+  const p=toLogical(e);
+  if(G.mode==="chase"){if(G.ch.t<0)return;G.ch.lane=clamp(G.ch.lane+(p.x<W/2?-1:1),0,2);return;}
+  if(G.mode!=="play")return;
+  for(const k of G.pickups){if(Math.abs(p.x-k.x)<28&&Math.abs(p.y-k.y)<28){takePickup(k);return;}}
+  for(let i=0;i<9;i++){const b=G.bubbles[i];if(b&&Math.hypot(p.x-SLOTS[i].x,p.y-SLOTS[i].y)<44){payBubble(i);return;}}
+  let best=null,bd=1e9;
+  for(const w of G.walkers){if(Math.abs(p.x-w.x)<22&&p.y>w.y-58&&p.y<w.y+8){const d=Math.abs(p.x-w.x);if(d<bd){bd=d;best=w;}}}
+  if(best)signWalker(best);
+});
+document.addEventListener("keydown",e=>{
+  if(G&&G.mode==="chase"&&G.ch.t>=0){if(e.key==="ArrowLeft")G.ch.lane=Math.max(0,G.ch.lane-1);if(e.key==="ArrowRight")G.ch.lane=Math.min(2,G.ch.lane+1);}
+});
+$("hype").addEventListener("click",hype);
+const skimOn=e=>{e.preventDefault();if(G&&G.mode==="play"){G.skim=true;$("skim").classList.add("on");}};
+const skimOff=()=>{if(G)G.skim=false;$("skim").classList.remove("on");};
+$("skim").addEventListener("pointerdown",skimOn);
+for(const ev of ["pointerup","pointerleave","pointercancel"])$("skim").addEventListener(ev,skimOff);
+$("skim").addEventListener("contextmenu",e=>e.preventDefault());
+$("run").addEventListener("click",()=>{
+  if(G.mode!=="play")return;
+  skimOff();
+  modal(`<h3>Make a run for it?</h3><p>If you get away, you keep <b class="good">${fmt(G.vault)}</b>. If they catch you, you lose it all.</p>
+    <p>The closer that black car is, the more cruisers will be on the road.</p>
+    <div class="btns"><button class="big run" data-act="go">Floor it</button><button class="big alt" data-act="close">Keep running the scheme</button></div>`);
+});
+
+// ---------- Modals ----------
+function modal(html){$("card").innerHTML=html;$("modal").hidden=false;$("card").scrollTop=0;}
+function closeModal(){$("modal").hidden=true;}
+$("modal").addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b)return;
+  const a=b.dataset.act;
+  if(a==="close")closeModal();
+  if(a==="go"){closeModal();startChase(false);}
+  if(a==="start"){closeModal();G=newRun();nextHeadline();}
+});
+
+function intro(){
+  modal(`<h3>PONZI RUN<small>v${VERSION} · arcade</small></h3>
+    <ul>
+      <li><b>Tap people on the sidewalk</b> to sign them up. Their money goes into the fund.</li>
+      <li><b>Watch for plants.</b> Feds wear an earpiece and often sunglasses, and their badge glints. Reporters carry a notepad. Big money is tempting. Feds know that.</li>
+      <li><b>Tap withdrawal bubbles</b> to pay investors before their patience runs out. Angry investors shake confidence. If confidence hits zero, it's a bank run.</li>
+      <li><b>Hold Skim</b> to move fund cash into your vault. Only the vault counts.</li>
+      <li><b>The black car is the FBI.</b> Every mistake brings it closer. If it reaches your door, you're done.</li>
+      <li><b>Hit Run</b> to get away. Tap left or right to dodge cruisers on the way to the airport.</li>
+    </ul>
+    <div class="btns"><button class="big go" data-act="start">Open for business</button></div>`);
+}
+
+// ---------- Ending ----------
+function sentence(){return Math.round(clamp(4+Math.log10(Math.max(G.peakOwed+G.vault,1e5)/1e5)*35,4,150));}
+function story(kind){
+  const out=[], v=G.vault, yrs=sentence();
+  let scene=G.collapse?"Investors stormed the lobby demanding their money, so you went out the back. ":"";
+  scene+=kind==="escaped"?pick([`You took the coast road at 120 miles an hour with three cruisers in the mirror. By the time they set up roadblocks, you were in the air.`,
+      `You cut through the fish market, lost the last cruiser behind a truck full of crabs, and made the 9:40 flight to somewhere warm.`,
+      `You drove straight onto the tarmac. The pilot had the engines running. The cruisers found tire marks and an empty hangar.`])
+    :kind==="crash"?pick([`You clipped a cruiser at the airport exit and spun into a hedge shaped like a dolphin.`,
+      `Two blocks from the highway, a cruiser boxed you in. You were still gripping the wheel when they opened the door.`,
+      `You made it to the airport parking lot. The agents were waiting by the terminal with coffee.`])
+    :pick([`The black sedan finally stopped at your door. You'd watched it creep closer all day.`,
+      `Agents walked in mid-pitch. Your last investor was still holding out a check.`,
+      `They came through the front door while you were counting the vault.`]);
+  if(week()<=2)scene+=` The whole thing lasted ${week()} week${week()>1?"s":""}. Historians argue over whether it counts as a scheme or a long lunch.`;
+  out.push(["The end",scene]);
+  if(kind==="escaped"){
+    out.push(["Your new life",v<50e3?`You got away with ${fmt(v)}. It lasted fourteen months. Now you tend bar in a beach town under a name you keep forgetting.`
+      :v<500e3?`${fmt(v)} bought a small café by the sea. The coffee is bad. Nobody asks questions.`
+      :v<5e6?`${fmt(v)} bought a house on a hill, a new nose, and a golden retriever named Dividend.`
+      :v<50e6?`${fmt(v)} goes a long way in a country with no extradition treaty. You bought the local football club.`
+      :`With ${fmt(v)}, you bought an island. Then a second island, to keep an eye on the first.`]);
+  }else{
+    out.push(["Prison",(v>0?`Agents seized all ${fmt(v)} in your vault. `:`There was nothing in your vault. Prosecutors found that the most confusing part of the case. `)
+      +`The judge gave you ${yrs} years. `+pick([`You run the prison's commissary black market now. Old habits.`,`You teach a personal finance class to the other inmates. You're the only one who finds it funny.`,`Your cellmate gave you his commissary money to invest. He keeps asking about returns.`])]);
+  }
+  if(G.peakInv>0){
+    let t=G.peakInv<25?`Only ${num(G.peakInv)} people lost money, and most of them were friends. Thanksgiving is canceled indefinitely.`
+      :`${num(G.peakInv)} people believed in ${FUND}. They thought they had ${fmt(G.peakOwed)}. A trustee spent nine years recovering ${Math.round(kind==="escaped"?rand(5,25):rand(30,60))}% of it.`;
+    if(G.angry>0)t+=` ${num(G.angry)} times, someone stood in your lobby yelling about a late payment.`;
+    if(G.peakInv>=25)t+=" "+pick([`Edna Fisk, a retired schoolteacher, lost the house she paid off in 1998.`,`Carl Ruiz, a dentist, had put in his kids' college fund. He gives talks on warning signs now.`,`Maria Delgado had remortgaged her bakery to "double down." It's a vape shop now.`]);
+    out.push(["The investors",t]);
+  }
+  const slips=[];
+  if(G.agents)slips.push(G.agents===1?`You personally signed up one federal agent. He asked for a receipt.`:`You personally signed up ${G.agents} federal agents. One of them asked for a receipt.`);
+  if(G.reporters)slips.push(`${G.reporters} reporter${G.reporters>1?"s":""} you signed wrote about the experience. One of the articles won a prize.`);
+  if(!G.agents&&!G.reporters&&G.signed>20)slips.push(`Not one fed or reporter got past you. The FBI still can't work out how you spotted them.`);
+  if(G.peakOwed>0&&G.skimmed>G.peakOwed*0.5)slips.push(`You skimmed more than half of everything that came in. Forensic accountants called it "greedy, even for this."`);
+  if(slips.length)out.push(["Your slip-ups",slips.join(" ")]);
+  out.push(["Years later",pick(kind==="escaped"?[`Years later, you lost a third of your fortune to a crypto scheme run by a charming young man. You admired his work.`,
+      `Once, in an airport in Lisbon, a former investor recognized you. She didn't call the police. She just stared until you left.`,
+      `The documentary about you ends on an empty chair and the words "Whereabouts unknown."`,
+      `You tried starting a small, honest investment club in your new town. It didn't stay honest.`]
+    :[`You applied for a presidential pardon. It was denied in four minutes.`,`Business schools teach your case now. Students are graded on spotting the warning signs.`,
+      `${CITY} renamed the street your office was on.`,`You still get letters from investors. Most are angry. One asks if you're taking new money.`])]);
+  return out;
+}
+function ending(kind){
+  const esc=kind==="escaped", score=esc?Math.round(G.vault):0;
+  let best=0;try{best=+localStorage.getItem("ponzi-rush-best")||0;if(score>best)localStorage.setItem("ponzi-rush-best",score);}catch(e){}
+  const head=pick(esc?[`${FUND} founder vanishes; ${fmt(G.peakOwed)} missing`,`Where is ${FUND}'s founder?`,`High-speed chase ends at an empty hangar`]
+    :kind==="crash"?[`${FUND} founder caught after chase`,`Fleeing fund boss crashes into topiary`,`Getaway ends early for ${FUND} founder`]
+    :[`Federal agents raid ${FUND}`,`${FUND} founder in handcuffs`,`"Nothing but upside": ${FUND} founder arrested`]);
+  modal(`<div class="tag">${esc?"You got away":"Caught"} · week ${week()}</div><div class="headline">${head}</div>
+    ${story(kind).map(([h,t])=>`<div class="ep"><div class="tag">${h}</div><p>${t}</p></div>`).join("")}
+    <div class="endstats"><span>Weeks running</span><span>${week()}</span><span>People signed</span><span>${num(G.signed)}</span>
+    <span>Payouts made</span><span>${num(G.paid)}</span><span>Angry investors</span><span>${num(G.angry)}</span>
+    <span>Feds and reporters signed</span><span>${G.agents+G.reporters}</span>
+    <span>Score (vault)</span><span class="${score?"good":"bad"}">${fmt(score)}</span><span>Best escape</span><span>${fmt(Math.max(best,score))}</span></div>
+    <div class="btns"><button class="big go" data-act="start">New scheme</button></div>`);
+}
+
+// ---------- Boot ----------
+G=newRun();G.mode="idle";
+resize();nextHeadline();intro();
+requestAnimationFrame(loop);
+</script>

@@ -1,0 +1,204 @@
+984	The Ledger	{0} Gazetesi
+985	Month 2	{2}. Ay · 25¢
+986	Back to the office	Ofise dön
+987	Note from	<b>Kaynağından not:</b> {0}
+988	Hire	+ İşe al
+989	Your status	Statün ve ayrıcalıkların
+990	How to play	Nasıl oynanır
+991	Less marketing	Daha az pazarlama
+992	More marketing	Daha çok pazarlama
+993	Skim percentage	Çalma yüzdesi
+994	Month 2	{2}. Ay
+995	Ledger	Gazete
+996	Fund cash	Fon kasası
+997	Owed	Borç
+998	Investors	Yatırımcı
+999	Stash	Kasan · <em>harca ›</em>
+1000	Trust	Güven
+1001	i style	<i style="width:{11}%"></i>
+1002	b class	<b class="{12}">{13}</b>
+1003	Details	Ayrıntılar ›
+1004	Promised return	Vaat edilen getiri
+1005	per month	aylık
+1006	Skim	Çal
+1007	b id	<b id="skimPct"></b>
+1008	Cover-up	Örtbas
+1009	Crew	Ekip
+1010	Escape plan	Kaçış planı
+1011	32 of	{32}/{33} alındı
+1012	Readiness	Hazırlık: <b>{34}</b>
+1013	Run	Kaç
+1014	Open the office	Ofisi aç →
+1015	0 investors	+{0} yatırımcı · {1} giriş ·
+1016	paid	ödenen {3} / {4}
+1017	em 0 more	<em>+{0} tane daha</em>
+1018	0 hush	+ {0} sus payı
+1019	Cash after	Harcamadan sonra kasa <b>{0}</b>
+1020	Payouts due	Ödenecek ≈ <b>{2}</b>
+1021	Back	Geri
+1022	New investors	Yeni yatırımcılar
+1023	Deposits in	Gelen yatırımlar
+1024	Payouts made	Yapılan ödemeler
+1025	3 of 4	−{3} / {4}
+1026	Marketing and	Pazarlama ve örtbas
+1027	Crew salaries	Ekip maaşları
+1028	Hush money	Sus payı
+1029	Upkeep on	Oyuncaklarının bakımı (kasadan)
+1030	Skimmed to	Kasana çalınan
+1031	Investors who	Parasını çekip ayrılan yatırımcılar
+1032	Your crew	Ekibin · {0}/{1}
+1033	Salaries rise	Fon büyüdükçe maaşlar artar. İşler ısınınca ya da maaş aksayınca sadakat düşer. Sadakatsiz adamlar konuşur.
+1034	4 Salary	{4} Maaşı ayda {5}.
+1035	Pay bonus	Prim ver · {8}
+1036	Fire	Kov
+1037	For hire	İşe alınabilir
+1038	5 mo	{5}/ay
+1039	Escape plan	Kaçış planı · {0}
+1040	Paid from your stash 1	Kasandan ödenir ({1}). Hazırlık senin planındır. Gerçek şansın yetkililerin ne kadar yaklaştığına da bağlı. Şimdi kaçarsan kasanın %{2}'si seninle gelir.
+1041	The rules	Kurallar
+1042	b Plan	Ayı <b>planla</b>, masada <b>çalış</b>, gazeteyi <b>oku</b>.
+1043	b Stash	<b>Kasa</b> senin. Geri kalan her şey yatırımcılarının.
+1044	b Spot	Köstebekleri <b>yakala</b>. Kalanlara <b>teklif yap</b>.
+1045	Nobody tells	Federallerin ne kadar yaklaştığını kimse söylemez. Onlar gelmeden <b>kaç</b>.
+1046	Replay	İpuçlarını tekrar göster
+1047	b Your cover	<b>Kılıfın değişti.</b> Büyük fon, büyük isimler: denetçin artık {0}, paran da "{1} bankasında duruyor".
+1048	b New page	<b>Kara listende yeni sayfa:</b> {0}
+1049	Month 0	{0}. Ay
+1050	You can't pay	Borcunu ödeyemiyorsun ve yatırımcılar kapıda kuyruk oldu. Yetkililer birkaç saat içinde burada olur.
+1051	Escape readiness 1	Kaçışa hazırlık: {1}. Kurtulursan {2} seninle gelir.
+1052	You'll have 30	30 saniyen var.
+1053	Flee now	Şimdi mi kaçıyorsun?
+1054	Escape readiness b	Kaçışa hazırlık: <b>{0}</b>. Yetkililer ne kadar yakınsa gerçek şansın o kadar kötü.
+1055	If you make it	Kurtulursan <b class="good">{1}</b> seninle gelir{2}. Yakalanırsan her şeyini kaybedersin.
+1056	Once you start	Başladığında çıkmak için 45 saniyen olacak.
+1057	Disappear	Ortadan kaybol
+1058	Stay another	Bir ay daha kal
+1059	0 month 1	{0} · {1}. ay
+1060	Months running	Kaç ay sürdü
+1061	Peak investors	En çok yatırımcı
+1062	Peak owed	En yüksek borç
+1063	Total skimmed	Toplam çalınan
+1064	How close	Aslında ne kadar yakınlardı
+1065	Score	Puan (kurtarılan kasa)
+1066	Best escape	En iyi kaçış
+1067	New scheme	Yeni tezgâh
+1068	Your real escape	Gerçek kaçış şansın
+1069	Your phone hasn't	Telefonun susmak bilmiyor
+1070	Investors are calling	Yatırımcılar arıyor, posta yığılmış, lobide kuyruk var. Bugün hepsine yetişemeyeceksin.
+1071	Start with	Yığından başla
+1072	Today	Bugün: {2}
+1073	3 in tray	Sepette {3}
+1074	Black book	Kara liste
+1075	Cover story	Kılıf
+1076	b class whalenote	<b class="whalenote">Lobide bir balina var</b>
+1077	New investor application	Yeni yatırımcı başvurusu{1}
+1078	Name	Ad
+1079	Age	Yaş
+1080	Occupation	Meslek
+1081	Address	Adres
+1082	Deposit	Yatırım
+1083	Payment	Ödeme
+1084	Referred by	Referans
+1085	Signed	İmza
+1086	b class sig	<b class="sig">{10}</b>
+1087	State of Ashford	Ashford Eyaleti · Kimlik kartı
+1088	Born	Doğum {13}
+1089	Exp	SKT {14}
+1090	WHALE	BALİNA
+1091	b Referral	<b>Referans:</b> {0}
+1092	b Background	<b>Sicil:</b> {0}
+1093	b Small talk	<b>Ağzından kaçan:</b> {0}
+1094	b You pitched	<b>"{0}" konuşmasını yaptın:</b> "{1}"
+1095	Referral 30m	Referansı ara<br>30 dk
+1096	Background 2	Sicilini araştır<br>{2}
+1097	Small talk 15m	Ağzını ara<br>15 dk
+1098	Turn away	Geri çevir
+1099	Close 0	Anlaş · {0}
+1100	Pitch 1	Teklif yap · {1}
+1101	Withdrawal request	Para çekme talebi
+1102	Investor	Yatırımcı
+1103	Amount	Tutar
+1104	What you know	Bildiklerin
+1105	b Word around	<b>Kulağına gelenler:</b> {0}
+1106	Ask around	Kulak kabart · 20 dk
+1107	Stall	Oyala
+1108	Pay half	Yarısını öde
+1109	Pay 2	Öde: {2}
+1110	b No notes	<b>Not yasak.</b> Denetçi izliyor. Kara listen ve kılıfın çekmecede kalıyor.
+1111	Leave it	Bırak
+1112	File it	Dosyala · {1} dk
+1113	Month 1	{1}. Ay
+1114	Tray empty	Sepet boş
+1115	Today's take	Günün kazancı
+1116	3 signed today	Bugün {3} imza
+1117	How the day	Gün nasıl geçti
+1118	A quiet day	Sakin bir gün.
+1119	Go to the bullpen	Satış salonuna geç →
+1120	Close the office	Ofisi kapat →
+1121	Tells you know	Şimdiye kadar bildiğin ipuçları. Sicil araştırması her zaman doğruyu söyler ama bir saat sürer.
+1122	Back to the desk	Masaya dön
+1123	What you've told	Dünyaya anlattığın hikâye. Dosyaladığın her belge buna uymalı. Doğruyu söylemek itiraftır.
+1124	Fund size	Fon büyüklüğü, son rapor
+1125	Auditor	Denetçi
+1126	Strategy	Strateji
+1127	Outgoing wires	Giden havaleler
+1128	Your status	Statün
+1129	Next b	Sıradaki: <b>{0}</b>. Bunun için {1} yönetilen varlık{2} gerekir.
+1130	There's nothing	Bunun üstü yok. Sadece aşağısı var.
+1131	Pitch 0	{0}: teklif
+1132	Read them first	Önce onu oku. Güven mi istiyor, statü mü, büyük vurgun mu?
+1133	They're hooked	Oltaya geldi
+1134	Push your luck	Şansını zorlayacak mısın?
+1135	0 leans in	{0} öne eğiliyor: <i>“{1}”</i>
+1136	Say the right	Doğru şeyi söylersen çek <b class="good">{2}</b> olur (×{3}). Yanlış şeyi söylersen çekip gider.
+1137	Don't push	Zorlama · {5}
+1138	The bullpen	Satış salonu
+1139	Month 0 after	{0}. Ay · mesai sonrası
+1140	1 signed today	Bugün {1} imza
+1141	2 in	{2} giriş
+1142	Go home	Eve git →
+1143	They're all looking	Herkes sana bakıyor. Bir şey söyle.
+1144	The good life	Tatlı hayat
+1145	Paid from your stash 0	Kasandan ödenir ({0}). İmajın: <b>{1}</b>.{2} Bakım masrafları her ay kasandan düşer.
+1148	You're a 2	Artık bir {2} oldun. Yeni mekân: <b>{3}</b>.
+1149	What changes	Neler değişiyor
+1150	Read the Ledger	Gazeteyi oku
+1151	Month 0 right	{0}. Ay · şu anda
+1152	Agents in	Ajanlar lobide
+1153	They're coming	Merdivenlerden çıkıyorlar. {2}{3}{4}
+1154	Empty the safe	Önce kasayı boşalt · {7} · 4 sn sürer
+1155	Surrender	Teslim ol
+1156	Your phone rings	Telefonun çalıyor
+1157	A family office	Cenevre'den bir aile ofisi: "Size <b class="good">{0}</b> yatırmak istiyoruz. Ama yüz yüze görüşmemiz lazım. Pazartesi."
+1158	One more month	“Bir ay daha. Bir ay daha ne ki?”
+1159	Stay for the	{1} için kal
+1160	Hang up	Telefonu kapat ve git
+1161	Your police	Polis telsizin: <i>"Tüm birimler, {0} tarafını gözetleyin."</i>
+1162	0 1 of 4	{0} · {1}/4
+1163	b Fund cash	<b>Fon kasası</b> yatırımcılarının parası. <b>Kasan</b> senin. Seninle sadece kasan gelir.
+1164	Slide to	Fon kasasından kasana para <b>çalmak</b> için kaydır. Her dolar senin. Her dolar aynı zamanda delil.
+1165	That's enough	Bu kadar plan yeter. <b>Ofisi aç.</b>
+1166	Someone wants	Biri yatırım yapmak istiyor. Formu <b>kimliğiyle</b> karşılaştır: ad, doğum yılı, son geçerlilik, imza.
+1167	Your b black	<b>Kara listen</b> gizli ajanları ele veren işaretleri sıralar. <b>Kılıfın</b>, herkese anlattığın yalandır.
+1168	Looks clean	Temiz mi görünüyor? <b>Teklif yap.</b> Mesleği ve sözleri ne istediğine dair ipucu verir.
+1169	They bit	Oltaya geldi. <b>Anlaşmayı bağla.</b>
+1170	Read the b	Her ay <b>gazeteyi</b> oku. Bazı haberler seninle ilgili. Federallerin ne kadar yaklaştığını kimse söylemeyecek.
+1171	When it feels	Ortalık fazla ısınınca <b>kaç</b>. Erken kaçarsan parayı geride bırakırsın. Geç kalırsan hiç gidemezsin.
+1172	An investor wants	Bir yatırımcı parasını geri istiyor. <b>Öde</b>, <b>yarısını öde</b> ya da <b>oyala</b>. Yanlış kişiyi oyalarsan duyulur.
+1173	Paperwork	Evrak işi. Her cevap <b>kılıfına</b> uymalı. Doğruyu söylemek itiraftır.
+1174	A b surprise	Bir <b>sürpriz denetim</b>. Notların çekmecede kalıyor. Umarım hikâyeni hatırlıyorsundur.
+1175	A b whale	Bir <b>balina</b>. Normal bir çekin beş katı ya da daha fazlası. Federaller de balinaların cazip olduğunu bilir.
+1176	Money in your	<b>Kasanda</b> para var. Tatlı hayatı satın almak için dokun. Statü kapıları açar. Gözleri de üstüne çeker.
+1177	You can hire	Artık bir <b>ekip</b> kurabilirsin. Her birinin bir yeteneği, bir maaşı ve bir ağzı var.
+1178	You have a b	Artık bir <b>satış salonun</b> var. Git onlara bir konuşma yap.
+1179	Skip tips	İpuçlarını geç
+1180	You have b	<b>$25.000</b> paran, çarşı içinde kiralık bir ofisin ve hiç vicdanın yok.
+1181	Get rich	Zengin ol. <b>Kaç.</b>
+1182	A dark office	Gece karanlık bir ofis. Aralık kalmış bir kapının üstünde yeşil bir çıkış tabelası parlıyor, dışarı ışık sızıyor. Yanında para dolu bir çanta bekliyor.
+1183	PORT ASHFORD	PORT ASHFORD · 2027
+1184	CASE NO	DOSYA NO. 27-0412
+1185	the way out	çıkış yolu
+1188	Make millions	Başkalarının parasıyla milyonlar kazan. Sonra çıkışa yetiş.
+1189	CASE OPEN	DOSYA AÇIK
+1190	START A SCHEME	BİR TEZGÂH KUR
+1191	I've done	Bunu daha önce yaptım

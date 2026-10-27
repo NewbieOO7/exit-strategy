@@ -1,0 +1,621 @@
+<title>Ponzi Run</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@500;700&family=IBM+Plex+Sans:wght@400;600&family=Old+Standard+TT:wght@400;700&display=swap">
+<style>
+/* Layout: one-screen strategy view — top bar, Ledger ticker, city map filling the middle, money strip, tab bar. Sheets slide over the map and pause time. Single dark look by choice. */
+:root{
+  --bg:#0f1512; --panel:#17201b; --panel2:#1e2a23; --line:#2b3a31; --fg:#e8efe9; --muted:#8fa497;
+  --money:#5fd48a; --gold:#e9c46a; --danger:#ff6b5b; --warn:#f4a259; --water:#13232a;
+  --paper:#efe9da; --ink:#1d1b17; --inkmuted:#5d574b;
+  --display:"Archivo Black", Impact, "Arial Black", sans-serif;
+  --body:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --news:"Old Standard TT", Georgia, serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.4;overflow:hidden;-webkit-user-select:none;user-select:none}
+.app{height:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:8px calc(8px + env(safe-area-inset-bottom,0px))}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.date{font-family:var(--mono);font-size:13px;line-height:1.2}
+.date b{display:block;font-family:var(--display);font-size:16px;font-weight:400;color:var(--gold)}
+.speed{display:flex;gap:4px}
+.speed button,.tabs button,.seg button{font:inherit;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:7px;cursor:pointer}
+.speed button{font-family:var(--mono);font-size:13px;padding:6px 9px;min-width:36px}
+.speed button.on,.seg button.on{border-color:var(--gold);color:var(--gold);background:#2c2a1a}
+.clout{font-family:var(--mono);font-size:13px;text-align:right;line-height:1.2}
+.clout b{display:block;font-size:18px;color:var(--gold)}
+.ticker{background:var(--paper);color:var(--ink);border-radius:3px;padding:6px 10px;font-family:var(--news);font-weight:700;font-size:14px;line-height:1.25;cursor:pointer;display:flex;gap:8px;align-items:baseline;min-height:2.6em}
+.ticker small{font-family:var(--body);font-weight:400;font-size:11px;color:var(--inkmuted);white-space:nowrap}
+.ticker span{min-width:0}
+.mapwrap{flex:1;min-height:0;position:relative}
+#map{width:100%;height:100%;display:block;touch-action:manipulation}
+.dist{cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.stats div{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 6px;min-width:0}
+.stats span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.stats b{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.conf{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.conf .bar{flex:1;height:6px;background:var(--panel2);border-radius:3px;overflow:hidden}
+.conf i{display:block;height:100%;background:var(--money);transition:width .3s}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tabs button{font-family:var(--display);font-size:14px;padding:12px 4px;letter-spacing:.3px}
+.tabs button.run{background:var(--danger);color:#1d0806;border:none}
+.sheet{position:fixed;inset:0;background:rgba(5,8,6,.7);display:flex;align-items:flex-end;justify-content:center;z-index:10}
+.sheet .in{background:var(--panel);border-top:1px solid var(--line);border-radius:14px 14px 0 0;width:100%;max-width:520px;max-height:82%;overflow:auto;display:flex;flex-direction:column;gap:12px;padding-top:14px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));-webkit-user-select:text;user-select:text}
+.sheet h3{font-family:var(--display);font-size:20px;margin:0;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sheet h3 small{font-family:var(--mono);font-size:13px;color:var(--gold);font-weight:500}
+.sheet .x{font:inherit;font-size:14px;background:none;border:1px solid var(--line);color:var(--fg);border-radius:7px;padding:4px 10px;cursor:pointer}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;padding:8px;font-family:var(--display);font-size:13px}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.ups{display:flex;flex-direction:column;gap:8px}
+.up{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.up .nm{min-width:0}
+.up .nm b{display:block}
+.up .nm small{display:block;font-size:12px;color:var(--muted);line-height:1.35}
+.up .nm em{display:block;font-style:normal;font-size:12px;color:var(--warn)}
+.up.owned{border-color:var(--money)}
+.up.locked{opacity:.55}
+.buy{font:inherit;font-family:var(--mono);font-size:13px;font-weight:700;border:none;border-radius:7px;padding:8px 10px;cursor:pointer;background:var(--gold);color:#2a2005;white-space:nowrap}
+.buy.done{background:none;color:var(--money);border:1px solid var(--money);cursor:default}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px}
+.kv span:nth-child(even){font-family:var(--mono);text-align:right}
+input[type=range]{width:100%;accent-color:var(--gold)}
+.newsitem{display:flex;gap:10px;font-size:14px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.newsitem small{font-family:var(--mono);color:var(--muted);white-space:nowrap;font-size:12px;padding-top:2px}
+.newsitem span{font-family:var(--news);font-weight:700;min-width:0}
+.big{font:inherit;font-family:var(--display);font-size:16px;border:none;border-radius:9px;padding:14px;cursor:pointer;letter-spacing:.5px;width:100%}
+.big.go{background:var(--money);color:#0b1a10}
+.big.run{background:var(--danger);color:#1d0806}
+.big.alt{background:var(--panel2);color:var(--fg);border:1px solid var(--line)}
+.btns{display:flex;flex-direction:column;gap:8px}
+.modal{position:fixed;inset:0;background:rgba(5,8,6,.85);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));z-index:20}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;max-width:460px;width:100%;display:flex;flex-direction:column;gap:12px;max-height:100%;overflow:auto;-webkit-user-select:text;user-select:text}
+.card h3{font-family:var(--display);font-size:22px;margin:0;text-wrap:balance}
+.card h3 small{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:6px}
+.card p{margin:0}
+.card .tag{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.pickc{display:flex;flex-direction:column;gap:6px}
+.pickc button{font:inherit;text-align:left;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:9px 12px;cursor:pointer}
+.pickc button small{display:block;color:var(--muted);font-size:12px}
+.headline{font-family:var(--news);font-weight:700;font-size:19px;background:var(--paper);color:var(--ink);padding:10px 12px;border-radius:3px;text-wrap:balance}
+.ep{display:flex;flex-direction:column;gap:3px}
+.ep p{font-size:14px;line-height:1.5}
+.endstats{border-top:1px solid var(--line);padding-top:10px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px}
+.endstats span:nth-child(even){font-family:var(--mono);text-align:right}
+.good{color:var(--money)} .bad{color:var(--danger)} .warn{color:var(--warn)}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.bub{animation:pulse 1.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.bub{animation:none}.conf i{transition:none}}
+</style>
+
+<div class="app">
+  <div class="top">
+    <div class="date"><b id="tDay">Day 1</b><span id="tDate"></span></div>
+    <div class="speed" id="speed"><button data-s="0" aria-label="Pause">II</button><button data-s="1">1×</button><button data-s="2">2×</button><button data-s="3">4×</button></div>
+    <div class="clout"><b id="tClout">0</b>clout</div>
+  </div>
+  <div class="ticker" id="ticker" role="button" tabindex="0"><small id="tkDay"></small><span id="tkText"></span></div>
+  <div class="mapwrap"><svg id="map" viewBox="0 0 360 424" preserveAspectRatio="xMidYMid meet" aria-label="Map of Port Ashford"></svg></div>
+  <div class="stats">
+    <div><span>Fund cash</span><b id="sCash"></b></div>
+    <div><span>Owed</span><b id="sOwed"></b></div>
+    <div><span>Investors</span><b id="sInv"></b></div>
+    <div><span>Your stash</span><b id="sStash" style="color:var(--gold)"></b></div>
+  </div>
+  <div class="conf">Confidence <div class="bar"><i id="sConf"></i></div></div>
+  <div class="tabs">
+    <button data-tab="scheme">Scheme</button><button data-tab="money">Money</button><button data-tab="news">News</button><button data-tab="escape" class="run">Escape</button>
+  </div>
+</div>
+<div class="sheet" id="sheet" hidden><div class="in" id="sheetIn"></div></div>
+<div class="modal" id="modal" hidden><div class="card" id="card"></div></div>
+
+<script>
+const VERSION = "1.4";
+const FUND = "Evergreen Capital";
+const CITY = "Port Ashford";
+const SPEEDS = [0, 1, 2, 4];       // days per second
+
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const rand=(a,b)=>a+Math.random()*(b-a);
+const randn=()=>(Math.random()+Math.random()+Math.random()-1.5)*2;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function fmt(n){const a=Math.abs(n),s=n<0?"−":"";
+  if(a>=1e9)return s+"$"+(a/1e9).toFixed(2)+"B";
+  if(a>=1e6)return s+"$"+(a/1e6).toFixed(a>=1e8?0:1)+"M";
+  if(a>=1e3)return s+"$"+(a/1e3).toFixed(a>=1e5?0:1)+"k";
+  return s+"$"+Math.round(a);}
+const num=n=>Math.floor(n).toLocaleString("en-US");
+const $=id=>document.getElementById(id);
+
+// ---------- The city ----------
+const CIRCLES=[
+  {id:"cc",name:"Country Club",kind:"Ashford Hills members",pop:400,dep:150e3,sk:0.45,tags:["affluent"],gx:0,gy:0},
+  {id:"hall",name:"City Hall",kind:"Council and staff",pop:120,dep:50e3,sk:0.5,tags:["elite"],gx:1,gy:0},
+  {id:"uni",name:"University",kind:"Faculty and endowment",pop:900,dep:25e3,sk:0.6,tags:["professional","online"],gx:2,gy:0},
+  {id:"doc",name:"Doctors' Row",kind:"St. Brigid's staff",pop:600,dep:90e3,sk:0.4,tags:["professional","affluent"],gx:0,gy:1},
+  {id:"law",name:"Law Firms",kind:"Downtown attorneys",pop:500,dep:80e3,sk:0.75,tags:["professional"],gx:1,gy:1},
+  {id:"tech",name:"Tech Park",kind:"Kestrel engineers",pop:2000,dep:30e3,sk:0.55,tags:["professional","online"],gx:2,gy:1},
+  {id:"sea",name:"Seabreeze",kind:"Retirement village",pop:900,dep:45e3,sk:0.2,tags:["elderly"],gx:0,gy:2},
+  {id:"church",name:"Grace Church",kind:"Congregation",pop:1200,dep:9e3,sk:0.15,tags:["faith","community","elderly"],gx:1,gy:2},
+  {id:"crypto",name:"Crypto Forum",kind:"Online, anonymous",pop:5000,dep:3e3,sk:0.25,tags:["online"],gx:2,gy:2,online:true},
+  {id:"yacht",name:"Yacht Club",kind:"Old money",pop:150,dep:600e3,sk:0.65,tags:["elite","affluent"],gx:0,gy:3},
+  {id:"lisbon",name:"Little Lisbon",kind:"Immigrant community",pop:1500,dep:7e3,sk:0.2,tags:["community","faith"],gx:1,gy:3},
+  {id:"harbor",name:"Harbor Union",kind:"Dockworkers",pop:2500,dep:6e3,sk:0.5,tags:["working","community"],gx:2,gy:3},
+];
+const BY={};for(const c of CIRCLES){BY[c.id]=c;c.x=8+c.gx*116;c.y=8+c.gy*96;c.w=112;c.h=88;c.cx=c.x+56;c.cy=c.y+44;}
+const LINKS=[["cc","doc"],["cc","yacht"],["cc","hall"],["cc","law"],["hall","law"],["hall","church"],["uni","tech"],["uni","doc"],["tech","crypto"],["doc","sea"],["doc","law"],["sea","church"],["sea","yacht"],["church","lisbon"],["lisbon","harbor"],["harbor","crypto"],["church","harbor"],["law","tech"]];
+const NB={};for(const c of CIRCLES)NB[c.id]=[];for(const [a,b] of LINKS){NB[a].push(BY[b]);NB[b].push(BY[a]);}
+const TAG_NAMES={affluent:"the wealthy",elite:"the elite",professional:"professionals",elderly:"retirees",faith:"the faithful",community:"tight-knit communities",online:"people online",working:"working people"};
+const skLabel=s=>s<0.3?"Trusting":s<0.5?"Open-minded":s<0.65?"Skeptical":"Very skeptical";
+
+// ---------- Upgrades ----------
+const TREES={pitch:"Pitch",promise:"Promises",cover:"Cover"};
+const UP=[
+  {id:"seminar",tree:"pitch",name:"Free-lunch seminars",cost:5,tags:{elderly:1.1},d:"Retirees will sit through anything for a free sandwich."},
+  {id:"golf",tree:"pitch",name:"Golf outings",cost:7,tags:{affluent:1},d:"Close deals on the back nine."},
+  {id:"sermon",tree:"pitch",name:"Sunday testimonials",cost:5,tags:{faith:1.2},d:"Believers vouch for you after the service."},
+  {id:"radio",tree:"pitch",name:"Community radio",cost:6,tags:{community:1.1,working:0.5},d:"Ads in Portuguese and on the dockside station."},
+  {id:"discord",tree:"pitch",name:"Crypto Discord",cost:6,tags:{online:1.2},d:"Rocket emojis and screenshots of gains."},
+  {id:"conf",tree:"pitch",name:"Medical conference sponsor",cost:9,req:"golf",tags:{professional:1},d:"Your logo on every lanyard."},
+  {id:"gala",tree:"pitch",name:"Society galas",cost:12,req:"golf",tags:{elite:1.2},d:"Black tie, open bar, quiet conversations about returns."},
+  {id:"influencer",tree:"pitch",name:"Influencer deals",cost:12,req:"discord",tags:{online:0.6,working:0.8,professional:0.3},sev:0.3,d:"Paid posts from people with nice cars."},
+  {id:"feeder",tree:"pitch",name:"Feeder advisers",cost:15,req:"golf",tags:{affluent:0.6,elite:0.6,professional:0.5},susp:0.1,d:"Other advisers bring their clients and take the blame first."},
+  {id:"referral",tree:"pitch",name:"Referral bonuses",cost:16,all:0.5,sev:0.8,d:"Pay investors to recruit. Spreads everywhere. Looks a lot like a pyramid."},
+
+  {id:"r2",tree:"promise",name:"2% a month",cost:5,appeal:0.4,rate:0.02,sev:0.4,d:"Steady, believable, slightly too good."},
+  {id:"r4",tree:"promise",name:"4% a month",cost:9,req:"r2",appeal:0.5,rate:0.04,sev:0.8,d:"Nobody asks how. Yet. Payouts grow fast."},
+  {id:"r8",tree:"promise",name:"8% a month",cost:14,req:"r4",appeal:0.7,rate:0.08,sev:1.6,d:"Pure greed. Money floods in and floods out."},
+  {id:"nodown",tree:"promise",name:"Never a down month",cost:7,appeal:0.25,sev:0.4,d:"Perfectly smooth returns. Investors love it. Analysts notice."},
+  {id:"statements",tree:"promise",name:"Glossy statements",cost:5,trust:0.05,d:"Heavy paper, embossed logo, numbers going up."},
+  {id:"lockup",tree:"promise",name:"Lock-up periods",cost:8,wd:-0.4,appeal:-0.15,d:"Money stays in for a year. Fewer withdrawals, less appeal."},
+  {id:"exclusive",tree:"promise",name:"Invite only",cost:10,excl:true,sev:-0.3,d:"The rich line up. Everyone else feels shut out."},
+  {id:"charity",tree:"promise",name:"Charity front",cost:9,trust:0.05,sev:-0.2,d:"A foundation with a beautiful logo and no programs."},
+  {id:"cult",tree:"promise",name:"Cult of personality",cost:16,req:"statements",trust:0.1,wd:-0.25,sev:0.3,d:"They don't invest in a fund. They invest in you."},
+
+  {id:"auditor",tree:"cover",name:"Pet auditor",cost:6,susp:0.15,d:"A two-man firm in a strip mall signs whatever you send."},
+  {id:"compliance",tree:"cover",name:"Compliance theater",cost:7,susp:0.1,d:"Binders, policies and a compliance officer who never leaves her office."},
+  {id:"forgery",tree:"cover",name:"Forged statements",cost:9,req:"auditor",susp:0.1,case:0.1,d:"Trade confirmations for trades that never happened."},
+  {id:"floor",tree:"cover",name:"Fake trading floor",cost:12,req:"auditor",susp:0.15,d:"Actors staring at screens, for when visitors drop by."},
+  {id:"layering",tree:"cover",name:"Offshore layering",cost:9,skimHeat:0.5,d:"Your skim passes through four countries. Skimming draws less attention."},
+  {id:"shells",tree:"cover",name:"Shell companies",cost:12,req:"layering",case:0.15,d:"A maze of companies that own each other."},
+  {id:"lawyers",tree:"cover",name:"Lawyers on retainer",cost:14,case:0.2,d:"Every request for documents takes months."},
+  {id:"political",tree:"cover",name:"Political friends",cost:16,reqC:["hall",0.25],case:0.25,d:"Friends at City Hall make calls on your behalf."},
+  {id:"shred",tree:"cover",name:"Shred the records",cost:10,once:true,d:"One night with a truck and an industrial shredder. Sets everyone back."},
+];
+const RUMORS=[
+  {t:"Evergreen guarantees 30% a year",appeal:0.25,sev:0.6},
+  {t:"Evergreen has never lost money. Ever.",appeal:0.2,sev:0.4},
+  {t:"The mayor invests with Evergreen",appeal:0.3,sev:0.5},
+  {t:"Evergreen is backed by a Swiss bank",appeal:0.2,sev:0.3},
+  {t:"Evergreen's returns doubled during the crash",appeal:0.25,sev:0.7},
+  {t:"Evergreen only takes money from friends",appeal:0.15,sev:0.1},
+];
+const PREP=[
+  {id:"passport",name:"Fake passport",cost:50e3,odds:15,d:"Better escape odds."},
+  {id:"accounts",name:"Numbered accounts",cost:200e3,odds:5,d:"Keep your whole stash when you flee. Otherwise 40% gets frozen."},
+  {id:"villa",name:"Villa in a non-extradition country",cost:1e6,odds:20,d:"Much better escape odds."},
+  {id:"jet",name:"Private jet on standby",cost:4e6,odds:20,d:"Much better odds. Lets you try to flee during a raid."},
+];
+const MARKET={boom:{rec:1.3,wd:0.9},normal:{rec:1,wd:1},bust:{rec:0.6,wd:1.3}};
+
+// ---------- News ----------
+const SIGNALS=[
+  ["SEC budget trimmed again",`${FUND} sponsors Little League team`,"Local investors enjoy a record year","Regulators buried in bank merger reviews"],
+  ["Columnist: beware of \"guaranteed\" returns","Forum users debate \"too good to be true\" funds","Finance podcast caller asks about \"a fund with a tree logo\"","Better Business Bureau logs new complaints"],
+  ["Business Weekly preparing exposé, sources say",`Reporter seen requesting filings for ${CITY} firms`,"Analyst: \"No real fund pays like that\"","Former fund employee writes cryptic blog post"],
+  ["SEC opens inquiry into unnamed regional fund",`Regulators subpoena ${CITY} bank records`,"Attorney general forms task force on \"steady return\" funds","Auditors warn of fake sign-offs from a strip-mall firm"],
+  [`FBI adds white-collar agents in ${CITY}`,"Grand jury meets in sealed financial case","Banks told to flag offshore wires from local funds","Former fund staff seen entering federal building"],
+  ["Sources: arrests imminent in major fraud probe","Judge signs sealed warrants late Friday","Airport police receive updated watch list","Federal agents rent office across from local fund"],
+];
+const HERRINGS=["SEC fines three crypto exchanges","FBI busts mortgage fraud ring in another state","Golden Horizon Fund founder gets 40 years","Congress debates tougher fraud laws","Regulators promise \"a new era of enforcement\"","Ponzi documentary tops streaming charts"];
+const FILLER=["Otters win in extra innings","Escaped llama found safe in library parking lot","Heat wave expected through the weekend","Mayor opens new parking garage","Local bakery wins regional croissant award","Fog delays ferry service"];
+const MARKET_NEWS={boom:["Markets roar to record highs","Bull market enters its third month"],normal:["Markets flat for the week","Interest rates unchanged"],bust:["Stocks tumble on recession fears","Layoffs spread as markets slide"]};
+
+// ---------- State ----------
+let G=null, speedBeforeSheet=1, acc=0;
+function newGame(home){
+  const g={day:1,home,cash:0,owed:0,stash:0,totalSkim:0,trust:70,clout:6,cloutAcc:0,skim:0.1,inv:{},bought:{},boughtCount:{pitch:0,promise:0,cover:0},
+    rumors:[],prep:{},susp:0,case:0,detected:false,short:0,market:"normal",bubbles:[],bubId:0,news:[],nextNews:3,nextRumor:rand(50,80),
+    hist:[],peakOwed:0,peakInv:0,mile:{},speed:1,over:false,collapsed:false};
+  for(const c of CIRCLES)g.inv[c.id]=0;
+  g.inv[home]=5;
+  const d=5*BY[home].dep;g.cash=d;g.owed=d;
+  return g;
+}
+const totalInv=()=>CIRCLES.reduce((t,c)=>t+G.inv[c.id],0);
+const pen=c=>G.inv[c.id]/c.pop;
+
+function eff(){
+  const e={pitch:{},all:0,appeal:0,rate:0.01,sev:0,wd:0,trust:0,susp:1,case:1,skimHeat:1,excl:false};
+  for(const u of UP)if(G.bought[u.id]){
+    for(const t in u.tags||{})e.pitch[t]=(e.pitch[t]||0)+u.tags[t];
+    e.all+=u.all||0;e.appeal+=u.appeal||0;if(u.rate)e.rate=Math.max(e.rate,u.rate);e.sev+=u.sev||0;e.wd+=u.wd||0;e.trust+=u.trust||0;
+    if(u.susp)e.susp*=1-u.susp;if(u.case)e.case*=1-u.case;if(u.skimHeat)e.skimHeat*=1-u.skimHeat;if(u.excl)e.excl=true;}
+  for(const r of G.rumors){e.appeal+=r.appeal;e.sev+=r.sev;}
+  return e;
+}
+const pitchMult=(c,e)=>0.25+(c.id===G.home?0.5:0)+e.all+Math.max(0,...c.tags.map(t=>e.pitch[t]||0));
+const appealC=(c,e)=>(1+e.appeal)*(e.excl?(c.tags.some(t=>t==="affluent"||t==="elite")?1.6:0.7):1);
+const upCost=u=>u.cost+2*G.boughtCount[u.tree];
+const threat=()=>G.detected?2+G.case/25:G.susp/50;
+const readiness=()=>25+PREP.reduce((t,p)=>t+(G.prep[p.id]?p.odds:0),0);
+const readyLabel=r=>r<35?"Poor":r<55?"Fair":r<75?"Good":r<90?"Strong":"Excellent";
+const escapeOdds=(p=0)=>clamp(Math.round(readiness()-threat()*9-p),5,95);
+const keepShare=()=>G.prep.accounts?1:0.6;
+
+// ---------- One day ----------
+function day(){
+  const e=eff(), r=e.rate, mk=MARKET[G.market], trustF=clamp(G.trust/70,0.1,1.4);
+  let deposits=0, newTotal=0;
+  const adds={};
+  for(const c of CIRCLES){
+    const I=G.inv[c.id], pm=pitchMult(c,e), res=1-c.sk*(1-0.5*Math.min(1,(pm-0.25)/1.5)), room=1-I/c.pop;
+    const grow=0.06*appealC(c,e)*pm*I*room*res*trustF*mk.rec;
+    let seed=0;for(const n of NB[c.id])seed+=pen(n)*0.5*pm*res*trustF*appealC(c,e);
+    adds[c.id]=clamp(grow+seed*room,0,c.pop-I);
+  }
+  for(const c of CIRCLES){const n=adds[c.id];G.inv[c.id]+=n;newTotal+=n;deposits+=n*c.dep*rand(0.7,1.3);}
+  const skim=deposits*G.skim;
+  G.cash+=deposits-skim;G.stash+=skim;G.totalSkim+=skim;G.owed+=deposits;
+  G.owed*=1+r/30;
+  const wf=((0.04+1.0*r)*mk.wd*Math.max(0.55,1+e.wd)+(G.trust<40?(40-G.trust)/40*0.12:0))/30;
+  const due=G.owed*wf, paid=Math.min(Math.max(0,G.cash),due);
+  G.cash-=paid;G.owed-=paid;
+  if(due>0&&paid<due*0.999){G.short++;G.trust-=3;}else{G.short=0;G.trust+=0.05+e.trust;}
+  if(G.market==="bust")G.trust-=0.05;
+  G.trust=clamp(G.trust,0,100);
+  G.cloutAcc+=newTotal/15;while(G.cloutAcc>=1){G.clout++;G.cloutAcc--;}
+  G.hist.push({dep:deposits,wd:paid,due,skim});if(G.hist.length>30)G.hist.shift();
+  // A Ponzi needs growth. When new money slows below what's going out, investors get nervous.
+  if(G.hist.length>=30){const dep30=G.hist.reduce((t,x)=>t+x.dep,0),due30=G.hist.reduce((t,x)=>t+x.due,0);
+    if(dep30<due30)G.trust=clamp(G.trust-(0.15+0.6*(1-dep30/due30)),0,100);}
+  const inv=totalInv();G.peakInv=Math.max(G.peakInv,inv);G.peakOwed=Math.max(G.peakOwed,G.owed);
+
+  // The investigation. Never shown directly.
+  const size=0.08*Math.log10(Math.max(G.owed,1e5)/1e5), skimHeat=G.skim*0.4*e.skimHeat, law=pen(BY.law);
+  if(!G.detected){
+    G.susp+=(0.15+size+e.sev*0.08+skimHeat+law*1.5+inv/8000*0.2)*e.susp;
+    if(G.susp>=100){G.detected=true;G.detectedDay=G.day;}
+  }else{
+    const agencies=0.18+(G.owed>50e6?0.12:0)+(G.owed>200e6||G.case>50?0.2:0);
+    G.case+=(agencies+e.sev*0.04+law+skimHeat)*e.case;
+  }
+
+  // Market drift
+  if(Math.random()<0.004){G.market=G.market==="normal"?pick(["boom","bust"]):"normal";addNews(pick(MARKET_NEWS[G.market]),"market");}
+
+  // Bubbles
+  for(const b of G.bubbles)b.ttl--;
+  for(const b of G.bubbles.filter(b=>b.ttl<=0&&b.type==="complaint")){if(G.detected)G.case+=2;else G.susp+=5;}
+  G.bubbles=G.bubbles.filter(b=>b.ttl>0);
+  const infected=CIRCLES.filter(c=>G.inv[c.id]>=1);
+  if(infected.length&&Math.random()<0.13)addBubble("prospect",pick(infected));
+  const cp=0.02+(70-G.trust)/70*0.12+(G.short?0.3:0)+inv/20000;
+  if(infected.length&&Math.random()<cp)addBubble("complaint",pick(infected));
+  const rich=infected.filter(c=>c.tags.includes("affluent")||c.tags.includes("elite"));
+  if(rich.length&&Math.random()<0.025)addBubble("whale",pick(rich));
+
+  // Rumors start on their own
+  if(inv>100&&G.day>=G.nextRumor){const pool=RUMORS.filter(x=>!G.rumors.some(y=>y.t===x.t));
+    if(pool.length){const ru=pick(pool);G.rumors.push(ru);addNews(`Word on the street: "${ru.t}"`,"rumor");}
+    G.nextRumor=G.day+rand(50,90);}
+
+  // Circle milestones
+  for(const c of CIRCLES)for(const m of [0.25,0.5,0.9]){const k=c.id+m;if(!G.mile[k]&&pen(c)>=m){G.mile[k]=true;G.clout+=2;
+    addNews(m===0.25?`${c.name} buzzing about a local fund`:m===0.5?`Half of ${c.name} now invested with ${FUND}`:`${c.name}: "Everyone we know is in Evergreen"`,"mile");}}
+
+  // Ledger
+  if(G.day>=G.nextNews){
+    const roll=Math.random();
+    if(roll<0.6){const tier=clamp(Math.floor(threat()+randn()*0.7),0,5);addNews(pick(SIGNALS[tier]),"signal");}
+    else if(roll<0.78)addNews(pick(HERRINGS),"herring");
+    else if(roll<0.9)addNews(pick(MARKET_NEWS[G.market]),"market");
+    else addNews(pick(FILLER),"filler");
+    G.nextNews=G.day+Math.round(rand(4,7));
+  }
+
+  G.day++;
+  if(G.detected&&G.case>=100){raid();return;}
+  if(G.short>=10||G.trust<=0){collapse();return;}
+}
+function addBubble(type,c){
+  if(G.bubbles.filter(b=>b.c===c.id).length>=2)return;
+  G.bubbles.push({id:++G.bubId,type,c:c.id,ttl:type==="whale"?5:type==="complaint"?6:8,x:c.x+rand(22,90),y:c.y+rand(30,70)});
+}
+function addNews(text,kind){G.news.unshift({day:G.day,text,kind});if(G.news.length>40)G.news.pop();}
+
+// ---------- Map ----------
+function buildMap(){
+  let s=`<rect x="0" y="392" width="360" height="32" fill="var(--water)"/><text x="180" y="412" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4f6f7a">PORT ASHFORD HARBOR</text><g stroke="#2f4036" stroke-width="2" stroke-dasharray="3 4">`;
+  for(const [a,b] of LINKS)s+=`<line x1="${BY[a].cx}" y1="${BY[a].cy}" x2="${BY[b].cx}" y2="${BY[b].cy}"/>`;
+  s+=`</g>`;
+  for(const c of CIRCLES){
+    s+=`<g class="dist" data-c="${c.id}">
+      <rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" rx="12" fill="#17201b" stroke="${c.online?"#4a5a8a":"#2b3a31"}" stroke-width="1.5" ${c.online?'stroke-dasharray="5 4"':""}/>
+      <rect id="f-${c.id}" x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" rx="12" fill="#5fd48a" opacity="0"/>
+      <text x="${c.x+10}" y="${c.y+22}" font-family="Archivo Black, Impact, sans-serif" font-size="12" fill="#e8efe9">${c.name}</text>
+      <text x="${c.x+10}" y="${c.y+37}" font-family="IBM Plex Sans, sans-serif" font-size="9.5" fill="#8fa497">${c.kind}</text>
+      <text id="p-${c.id}" x="${c.x+10}" y="${c.y+76}" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="700" fill="#e8efe9"></text>
+    </g>`;
+  }
+  s+=`<g id="bubs"></g>`;
+  $("map").innerHTML=s;
+}
+function updateMap(){
+  for(const c of CIRCLES){const p=pen(c);
+    $("f-"+c.id).setAttribute("opacity",p>0?(0.12+p*0.7).toFixed(3):0);
+    $("p-"+c.id).textContent=G.inv[c.id]>=1?`${num(G.inv[c.id])} · ${(p*100).toFixed(p<0.1?1:0)}%`:"";}
+  const col={prospect:"#5fd48a",complaint:"#ff6b5b",whale:"#e9c46a"}, lab={prospect:"+",complaint:"!",whale:"$"};
+  $("bubs").innerHTML=G.bubbles.map(b=>`<g class="bub" data-b="${b.id}"><circle cx="${b.x}" cy="${b.y}" r="13" fill="${col[b.type]}" stroke="#0f1512" stroke-width="2"/><text x="${b.x}" y="${b.y+5}" text-anchor="middle" font-family="Archivo Black, sans-serif" font-size="14" fill="#0f1512">${lab[b.type]}</text></g>`).join("");
+}
+function popBubble(id){
+  const b=G.bubbles.find(x=>x.id===id);if(!b)return;
+  G.bubbles=G.bubbles.filter(x=>x!==b);
+  const c=BY[b.c];
+  if(b.type==="prospect")G.clout+=Math.random()<0.5?2:3;
+  if(b.type==="whale"){const a=c.dep*rand(8,20);G.cash+=a*(1-G.skim);G.stash+=a*G.skim;G.owed+=a;G.inv[c.id]=Math.min(c.pop,G.inv[c.id]+1);
+    if(G.detected)G.case+=0.5;else G.susp+=1;addNews(`Mystery investor puts ${fmt(a)} into local fund`,"mile");}
+  updateMap();renderStats();
+}
+
+// ---------- HUD ----------
+function gameDate(d){return new Date(2027,2,d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});}
+function renderTop(){
+  $("tDay").textContent=`Day ${G.day}`;$("tDate").textContent=gameDate(G.day);$("tClout").textContent=G.clout;
+  for(const b of $("speed").children)b.classList.toggle("on",+b.dataset.s===G.speed);
+  const n=G.news[0];if(n){$("tkDay").textContent=`Day ${n.day}`;$("tkText").textContent=n.text;}
+}
+function renderStats(){
+  $("sCash").textContent=fmt(G.cash);$("sCash").style.color=G.short?"var(--danger)":"var(--money)";
+  $("sOwed").textContent=fmt(G.owed);$("sInv").textContent=num(totalInv());$("sStash").textContent=fmt(G.stash);
+  $("sConf").style.width=G.trust+"%";$("sConf").style.background=G.trust<30?"var(--danger)":G.trust<55?"var(--warn)":"var(--money)";
+  renderTop();
+}
+
+// ---------- Sheets ----------
+let sheetView=null, schemeTab="pitch", escConfirm=false;
+function openSheet(v,arg){
+  if(G.over)return;
+  if($("sheet").hidden){speedBeforeSheet=G.speed||speedBeforeSheet;G.speed=0;}
+  sheetView={v,arg};escConfirm=false;renderSheet();$("sheet").hidden=false;renderTop();
+}
+function closeSheet(){$("sheet").hidden=true;sheetView=null;G.speed=speedBeforeSheet||1;renderTop();}
+function renderSheet(){
+  const v=sheetView.v, e=eff();let h="";
+  if(v==="scheme"){
+    h=`<h3>Your scheme <small>${G.clout} clout</small></h3>
+      <div class="seg">${Object.entries(TREES).map(([k,n])=>`<button data-st="${k}" class="${k===schemeTab?"on":""}">${n}</button>`).join("")}</div>
+      <p class="hint">${schemeTab==="pitch"?"How word spreads, and which circles you can reach.":schemeTab==="promise"?"What pulls money in, and what makes people look closer.":"How well the scheme hides when someone looks."} Every purchase in a tree makes the next one cost more.</p><div class="ups">`;
+    for(const u of UP.filter(u=>u.tree===schemeTab)){
+      const own=G.bought[u.id], cost=upCost(u);
+      let lock=u.req&&!G.bought[u.req]?`Needs ${UP.find(x=>x.id===u.req).name}`:"";
+      if(u.reqC&&pen(BY[u.reqC[0]])<u.reqC[1])lock=`Needs ${u.reqC[1]*100}% of ${BY[u.reqC[0]].name} invested`;
+      const reach=u.tags?`Reaches ${Object.keys(u.tags).map(t=>TAG_NAMES[t]).join(", ")}.`:u.all?"Boosts spread everywhere.":"";
+      h+=`<div class="up ${own?"owned":lock?"locked":""}"><div class="nm"><b>${u.name}</b><small>${u.d} ${reach}</small>${lock?`<em>${lock}</em>`:""}</div>
+        ${own?`<button class="buy done" disabled>${u.once?"Done":"Owned"}</button>`:`<button class="buy" data-buy="${u.id}" ${lock||G.clout<cost?"disabled":""}>${cost}</button>`}</div>`;
+    }
+    h+=`</div>`;
+    if(schemeTab==="promise"&&G.rumors.length){
+      h+=`<p class="hint" style="margin-top:4px">Rumors your investors started. They pull money in and attract attention.</p><div class="ups">`;
+      G.rumors.forEach((r,i)=>{h+=`<div class="up"><div class="nm"><b>"${r.t}"</b><small>Spreading on its own.</small></div><button class="buy" data-squash="${i}" ${G.clout<6?"disabled":""}>Squash · 6</button></div>`;});
+      h+=`</div>`;
+    }
+  }
+  if(v==="money"){
+    const sum=k=>G.hist.reduce((t,x)=>t+x[k],0);
+    const dep=sum("dep"),wd=sum("wd"),due=sum("due");
+    h=`<h3>Money</h3>
+      <div class="kv"><span>Promised return</span><span>${(e.rate*100).toFixed(0)}% a month</span>
+      <span>Deposits, last 30 days</span><span class="good">${fmt(dep)}</span>
+      <span>Withdrawals paid, last 30 days</span><span>${fmt(wd)}</span>
+      ${due>wd*1.001?`<span>Withdrawals you couldn't pay</span><span class="bad">${fmt(due-wd)}</span>`:""}
+      <span>Skimmed, last 30 days</span><span style="color:var(--gold)">${fmt(sum("skim"))}</span>
+      <span>Fund cash</span><span>${fmt(G.cash)}</span><span>Owed to investors</span><span>${fmt(G.owed)}</span></div>
+      <label for="skimR" class="hint">Skim from new deposits: <b id="skimV">${Math.round(G.skim*100)}%</b></label>
+      <input type="range" id="skimR" min="0" max="40" step="5" value="${Math.round(G.skim*100)}">
+      <p class="hint">Skimmed money goes straight to your stash, the only money that counts when you leave. Skimming draws attention, and it leaves less cash to pay withdrawals.</p>
+      ${dep<due&&G.hist.length>=10?`<p class="bad" style="margin:0;font-size:13px">Withdrawals are outrunning new money. Grow faster or get out.</p>`:""}`;
+  }
+  if(v==="news"){
+    h=`<h3>The ${CITY} Ledger</h3><p class="hint">Some stories are about you. Most aren't. Watch the trend.</p>
+      ${G.news.map(n=>`<div class="newsitem"><small>Day ${n.day}</small><span>${n.text}</span></div>`).join("")}`;
+  }
+  if(v==="escape"){
+    const rd=readiness();
+    h=`<h3>Escape plan <small>${readyLabel(rd)}</small></h3>
+      <p class="hint">Paid from your stash (${fmt(G.stash)}). Readiness is your plan. Your real odds also depend on how close the authorities are, and nobody will tell you that.</p><div class="ups">`;
+    for(const p of PREP){const own=G.prep[p.id];
+      h+=`<div class="up ${own?"owned":""}"><div class="nm"><b>${p.name}</b><small>${p.d}</small></div>${own?`<button class="buy done" disabled>Owned</button>`:`<button class="buy" data-prep="${p.id}" ${G.stash<p.cost?"disabled":""}>${fmt(p.cost)}</button>`}</div>`;}
+    h+=`</div>`;
+    h+=escConfirm?`<p>Leave tonight? If you make it, you keep <b class="good">${fmt(G.stash*keepShare())}</b>. If you're caught, you lose everything.</p>
+      <div class="btns"><button class="big run" data-flee="0">Disappear</button><button class="big alt" data-noflee="1">Not yet</button></div>`
+      :`<button class="big run" data-runask="1">Run for it</button>`;
+  }
+  if(v==="circle"){
+    const c=BY[sheetView.arg], pm=pitchMult(c,e), I=G.inv[c.id];
+    const helps=UP.filter(u=>u.tags&&c.tags.some(t=>u.tags[t]));
+    h=`<h3>${c.name}</h3><p class="hint">${c.kind}${c.id===G.home?" · where you started":""}${c.online?" · online":""}</p>
+      <div class="kv"><span>Invested</span><span>${num(I)} of ${num(c.pop)}</span><span>Share</span><span>${(pen(c)*100).toFixed(1)}%</span>
+      <span>Typical check</span><span>${fmt(c.dep)}</span><span>Attitude</span><span>${skLabel(c.sk)}</span>
+      <span>Your reach here</span><span>${pm<0.5?"Weak":pm<1.2?"Decent":pm<2?"Strong":"Overwhelming"}</span>
+      <span>Connected to</span><span>${NB[c.id].map(n=>n.name).join(", ")}</span></div>
+      <p class="hint">Pitches that work here: ${helps.map(u=>`${u.name}${G.bought[u.id]?" (owned)":""}`).join(", ")||"word of mouth only"}.</p>
+      ${c.id==="law"?`<p class="warn" style="margin:0;font-size:13px">Lawyers read the fine print. Every lawyer who invests is a risk.</p>`:""}
+      ${c.id==="hall"?`<p class="hint">Get a quarter of City Hall invested to unlock Political friends.</p>`:""}`;
+  }
+  $("sheetIn").innerHTML=`<div style="display:flex;justify-content:flex-end"><button class="x" data-close="1">Close</button></div>`+h;
+  const sr=$("skimR");if(sr)sr.addEventListener("input",ev=>{G.skim=ev.target.value/100;$("skimV").textContent=ev.target.value+"%";});
+}
+$("sheet").addEventListener("click",ev=>{
+  if(ev.target===$("sheet")){closeSheet();return;}
+  const b=ev.target.closest("button");if(!b||b.disabled)return;
+  if(b.dataset.close){closeSheet();return;}
+  if(b.dataset.st){schemeTab=b.dataset.st;renderSheet();return;}
+  if(b.dataset.buy){const u=UP.find(x=>x.id===b.dataset.buy),cost=upCost(u);if(G.clout<cost)return;G.clout-=cost;G.bought[u.id]=true;G.boughtCount[u.tree]++;
+    if(u.id==="shred"){if(G.detected)G.case=Math.max(0,G.case-20);else G.susp=Math.max(0,G.susp-30);}
+    renderSheet();renderTop();return;}
+  if(b.dataset.squash!=null){if(G.clout<6)return;G.clout-=6;const r=G.rumors.splice(+b.dataset.squash,1)[0];addNews(`${FUND} denies rumor: "${r.t}"`,"rumor");renderSheet();renderTop();return;}
+  if(b.dataset.prep){const p=PREP.find(x=>x.id===b.dataset.prep);if(G.stash<p.cost)return;G.stash-=p.cost;G.prep[p.id]=true;renderSheet();renderStats();return;}
+  if(b.dataset.runask){escConfirm=true;renderSheet();return;}
+  if(b.dataset.noflee){escConfirm=false;renderSheet();return;}
+  if(b.dataset.flee!=null){$("sheet").hidden=true;sheetView=null;attemptEscape(+b.dataset.flee,"run");}
+});
+
+// ---------- Endgames ----------
+function raid(){
+  G.speed=0;G.over=true;
+  if(G.prep.jet)modal(`<div class="tag">Day ${G.day}</div><h3>Agents are at the front door</h3><p>Your pilot is fueling the jet. You might make it out the back.</p>
+    <div class="btns"><button class="big run" data-act="jetflee">Run for the jet</button><button class="big alt" data-act="surrender">Surrender</button></div>`);
+  else ending("caught","raid");
+}
+function collapse(){
+  G.speed=0;G.over=true;G.collapsed=true;
+  modal(`<div class="tag">Day ${G.day}</div><h3>The fund has collapsed</h3><p>You can't pay what you owe and investors are lining up outside. The authorities will be here within hours.</p>
+    <p>Escape readiness: ${readyLabel(readiness())}. If you make it, you keep ${fmt(G.stash*keepShare())}.</p>
+    <div class="btns"><button class="big run" data-act="collapseflee">Run</button></div>`);
+}
+function attemptEscape(pen,how){G.speed=0;G.over=true;const o=escapeOdds(pen);ending(Math.random()*100<o?"escaped":"failed",how,o);}
+
+function sentence(){return Math.round(clamp(4+Math.log10(Math.max(G.peakOwed+G.totalSkim,1e5)/1e5)*35,4,150)*(G.bought.lawyers?0.7:1));}
+const CIRCLE_FATES={
+  cc:`The country club quietly took your plaque off the clubhouse wall.`,
+  hall:`Two council members resigned. One blamed you on live TV.`,
+  uni:`The university renamed the lecture hall you funded. Twice.`,
+  doc:`Half of Doctors' Row postponed retirement. Their patients noticed the shaking hands.`,
+  law:`The lawyers you took money from represented your other victims, free of charge, out of spite.`,
+  tech:`Kestrel engineers built an app that flags funds like yours. It's very popular.`,
+  sea:`Seabreeze canceled bingo night for a year. Nobody could afford the cards.`,
+  church:`Grace Church lost its new-roof fund. That Sunday's sermon was about forgiveness. It was short.`,
+  crypto:`The crypto forum called it "a rug pull with extra steps" and moved on within a week.`,
+  yacht:`Three yachts went up for sale in the same week.`,
+  lisbon:`In Little Lisbon, your name is now a curse word in two languages.`,
+  harbor:`The dockworkers' union hall keeps your photo on the dartboard.`,
+};
+const BUILD_FATES={
+  floor:`The actors from your fake trading floor started an improv troupe. Their first show is about you.`,
+  referral:`Your referral program is now the textbook example of a pyramid.`,
+  cult:`Some investors still defend you online. They have a subreddit.`,
+  feeder:`Your feeder advisers took the blame first. None of them have forgiven you.`,
+  political:`City Hall's ethics committee met for the first time in eleven years.`,
+  exclusive:`"Invite only" turned out to be the best marketing you ever did.`,
+  charity:`The charity you fronted never existed. Its logo won a design award.`,
+  auditor:`Your pet auditor was arrested in the strip mall, mid-lunch.`,
+  r8:`At trial, the prosecutor just wrote "8% a month" on a whiteboard and sat down.`,
+  shred:`The shredding company still uses your job in its ads.`,
+};
+function story(kind,how){
+  const out=[], kept=Math.round(G.stash*keepShare()), frozen=G.stash-kept, yrs=sentence(), inv=totalInv();
+  const m=G.prep.jet?"jet":G.prep.passport?"passport":"none";
+  const ESC={jet:[`At 3 a.m. your jet lifted off from a private strip outside ${CITY}. The pilot never asked your name.`,`You told your assistant you had a conference in Geneva. The jet landed somewhere else.`],
+    passport:[`You walked through airport security as Gerald Pemberton, a man who sells industrial carpet. Nobody looked twice.`,`Your new passport said you were a Canadian dentist. You practiced the accent the whole flight.`],
+    none:[`You crossed the border on a Greyhound bus with a duffel bag of cash and a fake mustache. Somehow, it worked.`,`You drove south for nineteen hours with the radio off and the cash in a picnic cooler.`]};
+  const FAIL={jet:[`The jet never got clearance. Agents were waiting on the tarmac with coffee.`],passport:[`The passport was good. The photo wasn't.`,`You forgot your new name at passport control. Twice.`],
+    none:[`You were arrested at a gas station forty miles from the border, paying cash for beef jerky.`,`You missed your flight by four minutes. The agents didn't.`]};
+  let scene=how==="collapse"?"Investors were pounding on the front door, so you went out the back. ":"";
+  if(kind==="escaped")scene+=how==="jet"?`Agents came through the front door as you went out the back. The jet left the runway ninety seconds before the airport closed.`:pick(ESC[m]);
+  else if(kind==="failed")scene+=how==="jet"?`You made it to the hangar. So did the FBI.`:pick(FAIL[m]);
+  else scene=how==="surrender"?`Your pilot was fueling the jet when you decided you were too tired to run.`:pick([`Agents knocked at 6 a.m. You answered in a bathrobe that cost more than most people's rent.`,`They arrested you mid-pitch at a free-lunch seminar. Three retirees still asked for your card.`,`Agents walked in while you were on the phone promising someone "nothing but upside."`]);
+  if(G.day<60)scene+=` The whole thing lasted ${G.day} days.`;
+  out.push(["The end",scene]);
+  if(kind==="escaped"){
+    let life=kept<50e3?`You got away with ${fmt(kept)}. It lasted fourteen months. Now you tend bar in a beach town under a name you keep forgetting.`
+      :kept<500e3?`${fmt(kept)} bought a small café by the sea. The coffee is bad. Nobody asks questions.`
+      :kept<5e6?`${fmt(kept)} bought a house on a hill, a new nose, and a golden retriever named Dividend.`
+      :kept<50e6?`${fmt(kept)} goes a long way in a country with no extradition treaty. You bought the local football club.`
+      :`With ${fmt(kept)}, you bought an island. Then a second island, to keep an eye on the first.`;
+    if(frozen>0)life+=` Another ${fmt(frozen)} was frozen by a bank that suddenly remembered its compliance rules.`;
+    out.push(["Your new life",life]);
+  }else{
+    out.push(["Prison",(G.stash>0?(G.bought.shells?`Your shell companies kept investigators busy for years. They clawed back ${fmt(G.stash*0.3)} of your ${fmt(G.stash)} stash. `:`Investigators found your stash in a week. All ${fmt(G.stash)} of it. `):`There was no stash. Prosecutors found that the most confusing part of the case. `)
+      +`The judge gave you ${yrs} years.`+(G.bought.lawyers?` Your lawyers called it a win.`:"")+" "+pick([`You run the prison's commissary black market now. Old habits.`,`You teach a personal finance class to the other inmates. You're the only one who finds it funny.`,`Your cellmate gave you his commissary money to invest. He keeps asking about returns.`])]);
+  }
+  const hit=CIRCLES.filter(c=>pen(c)>=0.15).sort((a,b)=>pen(b)-pen(a));
+  let t=`${num(G.peakInv)} people in ${hit.length||1} corner${hit.length===1?"":"s"} of ${CITY} believed in ${FUND}. They thought they had ${fmt(G.peakOwed)}. A trustee spent nine years recovering ${Math.round(kind==="escaped"?rand(5,25):rand(30,60))}% of it.`;
+  const fates=hit.slice(0,4).map(c=>CIRCLE_FATES[c.id]);
+  if(fates.length)t+=" "+fates.sort(()=>Math.random()-0.5).slice(0,2).join(" ");
+  if(G.peakInv<25)t=`Only ${num(G.peakInv)} people lost money, and most of them were friends. Thanksgiving is canceled indefinitely.`;
+  out.push(["The investors",t]);
+  const builds=Object.keys(BUILD_FATES).filter(k=>G.bought[k]).map(k=>BUILD_FATES[k]);
+  if(G.rumors.length)builds.push(`The rumor that "${G.rumors[0].t.replace(/^Evergreen /,"you ").replace(/\.$/,"")}" became the headline of your trial.`);
+  if(builds.length)out.push(["Your scheme",builds.sort(()=>Math.random()-0.5).slice(0,2).join(" ")]);
+  out.push(["Years later",pick(kind==="escaped"?[`Years later, you lost a third of your fortune to a crypto scheme run by a charming young man. You admired his work.`,`Once, in an airport in Lisbon, a former investor recognized you. She didn't call the police. She just stared until you left.`,`The documentary about you ends on an empty chair and the words "Whereabouts unknown."`,`You read the ${CITY} Ledger online every morning, looking for your name. It shows up less every year.`]
+    :[`You applied for a presidential pardon. It was denied in four minutes.`,`Business schools teach your case now. Students are graded on spotting the warning signs.`,`${CITY} renamed the street your office was on.`,`You still get letters from investors. Most are angry. One asks if you're taking new money.`])]);
+  return out;
+}
+function ending(kind,how,odds){
+  G.over=true;G.speed=0;
+  const esc=kind==="escaped", score=esc?Math.round(G.stash*keepShare()):0;
+  let best=0;try{best=+localStorage.getItem("ponzi-plague-best")||0;if(score>best)localStorage.setItem("ponzi-plague-best",score);}catch(e){}
+  const head=pick(esc?[`${FUND} founder vanishes; ${fmt(G.peakOwed)} missing`,`Where is ${FUND}'s founder?`,`${FUND} offices found empty except for a fern`]
+    :kind==="failed"?[`${FUND} founder caught fleeing`,`Fund boss nabbed on the way out`]:[`Federal agents raid ${FUND}`,`"Nothing but upside": ${FUND} founder arrested`]);
+  const truth=G.detected?`The investigation opened on day ${G.detectedDay}. The case was ${Math.min(100,Math.round(G.case))}% complete.`:`Nobody had opened a case yet.`;
+  modal(`<div class="tag">${esc?"You got away":"Caught"} · day ${G.day}</div><div class="headline">${head}</div>
+    ${story(kind,how).map(([h,t])=>`<div class="ep"><div class="tag">${h}</div><p>${t}</p></div>`).join("")}
+    <div class="ep"><div class="tag">What you couldn't see</div><p>${truth}${odds!=null?` Your real escape odds were ${odds}%.`:""}</p></div>
+    <div class="endstats"><span>Days running</span><span>${G.day}</span><span>Peak investors</span><span>${num(G.peakInv)}</span>
+    <span>Peak owed</span><span>${fmt(G.peakOwed)}</span><span>Upgrades bought</span><span>${Object.keys(G.bought).length}</span>
+    <span>Score (stash kept)</span><span class="${score?"good":"bad"}">${fmt(score)}</span><span>Best escape</span><span>${fmt(Math.max(best,score))}</span></div>
+    <div class="btns"><button class="big go" data-act="again">New scheme</button></div>`);
+}
+
+// ---------- Modals ----------
+function modal(html){$("card").innerHTML=html;$("modal").hidden=false;$("card").scrollTop=0;}
+function closeModal(){$("modal").hidden=true;}
+$("modal").addEventListener("click",ev=>{
+  const b=ev.target.closest("button");if(!b)return;
+  if(b.dataset.home){G=newGame(b.dataset.home);addNews(`${FUND} opens its doors`,"filler");closeModal();buildMap();updateMap();renderStats();return;}
+  const a=b.dataset.act;
+  if(a==="jetflee")attemptEscape(15,"jet");
+  if(a==="surrender")ending("caught","surrender");
+  if(a==="collapseflee")attemptEscape(15,"collapse");
+  if(a==="again")intro();
+});
+function intro(){
+  modal(`<h3>PONZI RUN<small>v${VERSION}</small></h3>
+    <p>Build a Ponzi scheme across ${CITY}. Spend clout on your pitch, your promises and your cover. Skim what you can. Get out before the feds arrive.</p>
+    <p class="hint">Nobody tells you how close the investigation is. Read the Ledger and judge for yourself. Tap bubbles on the map: green for clout, gold for whales, red for complaints you need to calm down before they reach a regulator.</p>
+    <div class="tag">Pick where your first investors come from</div>
+    <div class="pickc">${CIRCLES.filter(c=>!["law","hall"].includes(c.id)).map(c=>`<button data-home="${c.id}">${c.name}<small>${c.kind} · ${skLabel(c.sk).toLowerCase()} · typical check ${fmt(c.dep)}</small></button>`).join("")}</div>`);
+}
+
+// ---------- Input ----------
+$("map").addEventListener("pointerdown",ev=>{
+  if(!G||G.over||!$("modal").hidden)return;
+  const bub=ev.target.closest("[data-b]");if(bub){popBubble(+bub.dataset.b);return;}
+});
+$("map").addEventListener("click",ev=>{
+  if(!G||G.over||!$("modal").hidden)return;
+  if(ev.target.closest("[data-b]"))return;
+  const d=ev.target.closest("[data-c]");if(d)openSheet("circle",d.dataset.c);
+});
+$("speed").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b||!G||G.over)return;G.speed=+b.dataset.s;if(G.speed)speedBeforeSheet=G.speed;renderTop();});
+document.querySelector(".tabs").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b||!G)return;openSheet(b.dataset.tab);});
+$("ticker").addEventListener("click",()=>G&&openSheet("news"));
+
+// ---------- Loop ----------
+let last=0;
+function loop(ts){
+  const dt=Math.min(0.25,(ts-last)/1000||0);last=ts;
+  if(G&&!G.over&&$("modal").hidden&&$("sheet").hidden&&!document.hidden&&G.speed){
+    acc+=dt*SPEEDS[G.speed];
+    let ticked=false;
+    while(acc>=1&&!G.over){acc-=1;day();ticked=true;}
+    if(ticked){updateMap();renderStats();}
+  }
+  requestAnimationFrame(loop);
+}
+
+if(typeof window.claude?.hot?.snapshot==="function")window.claude.hot.snapshot(()=>({G}));
+const start=d=>{
+  if(d&&d.G&&d.G.inv){G=d.G;buildMap();updateMap();renderStats();}
+  else{G=null;buildMapEmpty();intro();}
+  requestAnimationFrame(loop);
+};
+function buildMapEmpty(){G={inv:Object.fromEntries(CIRCLES.map(c=>[c.id,0])),bubbles:[]};buildMap();updateMap();G=null;}
+window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+</script>
